@@ -34,9 +34,8 @@ class authController {
             }
 
             const hashPassword = bcrypt.hashSync(password, 7);
-            const userRole = await Role.findOne({value: "USER"});
 
-            await User.create({username, password: hashPassword,  name, surname, roles: [userRole.value], group, vk});
+            await User.create({username, password: hashPassword,  name, surname, roles: ["USER"], group, vk});
 
             return resp.status(200).json("ok");
         } catch (e){
@@ -60,7 +59,6 @@ class authController {
             }
 
             const token = generateAccessToken(user._id, user.roles);
-            console.log("user", user);
             return resp.json({token, expiresIn: 3600 * 3, roles: user.roles, name: user.name + " " + user.surname});
 
         } catch (e){
@@ -92,7 +90,6 @@ class authController {
     async changeRole(req, resp){
         try{
             const {id, role} = req.body;
-            console.log(id, role);
             const user = await User.findOne({_id: id});
             if(!user){
                 return resp.status(404).json({message: "Пользователь не найден"});

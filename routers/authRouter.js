@@ -38,21 +38,21 @@ router.post('/login', authController.login);
 
 router.get('/users', [authMiddleware, roleMiddleware(["ADMIN"])], authController.getUsers);
 
-router.post('/markdown', (req, resp) => {
-    console.log(req.body);
-    resp.json({html: markdown.toHTML(req.body.message)});
-});
+// router.post('/markdown', (req, resp) => {
+//     console.log(req.body);
+//     resp.json({html: markdown.toHTML(req.body.message)});
+// });
 
 
-router.post("/roles", (req, resp)=> {
-    try{
-        Role.create({value: "USER"});
-        resp.status(200).json("ok")
-    } catch (e){
-        resp.status(400).json(e)
-    }
-
-})
+// router.post("/roles", (req, resp)=> {
+//     try{
+//         Role.create({value: "USER"});
+//         resp.status(200).json("ok")
+//     } catch (e){
+//         resp.status(400).json(e)
+//     }
+//
+// })
 
 
 

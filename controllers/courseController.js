@@ -94,7 +94,7 @@ class courseController{
         try{
             const token = req.headers.authorization;
             let userData
-            console.log("token is", !!token, token, "userData is", !!userData)
+            //console.log("token is", !!token, token, "userData is", !!userData)
             if(token){
                 try{
                     userData = jwt.verify(token, secret);
@@ -145,8 +145,22 @@ class courseController{
             const course = await Course.findOne({_id: req.params.id});
             let teachers;
             teachers = await prepTeachersName(course.teachers);
-            const {_id, title, description, preview, articles, notifications, tasks} = course
-            console.log("req.CA.role", req.CA.role);
+            const {_id, title, description, preview, articles, notifications, tasks, meetings} = course
+
+            let meeting = await Meeting.findOne({_id: meetings[meetings.length - 1]});
+            if(meetings.length > 0 && meeting){
+                meeting = meeting.active ? meeting : null;
+                if(meeting){
+                    meeting = {
+                        title: meeting.title,
+                        content: meeting.content,
+                        signup: meeting.students.includes(req.CA._id),
+                        active: meeting.active,
+                        date: meeting.date,
+                    }
+                }
+            }
+
             resp.json(
                 {
                     id: _id,
@@ -157,6 +171,7 @@ class courseController{
                     notifications,
                     tasks,
                     role: req.CA.role,
+                    meeting: meeting ? meeting : null,
                 }
 
             )
@@ -205,7 +220,6 @@ class courseController{
             //Добавляем в аккаунт создателя id аккаунта курса
             user.teaching.push(cAccount._id);
             let res = await User.updateOne({_id: user_id}, {teaching: user.teaching})
-            console.log("res: ", res);
             resp.json("ok").status(200);
         } catch(e){
             console.log("error", e)
@@ -298,12 +312,10 @@ class courseController{
 
                     if(homework && homework.comments.length !== 0){
                         for (let i = 0; i < homework.comments.length; i++) {
-                            console.log("id", homework.comments[i]);
                             const comment = await Comment.findOne({_id: homework.comments[i]});
                             const CA = await CourseAccount.findOne({_id: comment.author_id});
                             const user = await User.findOne({_id: CA.user_id});
                             const name = user.name + " " + user.surname;
-                            console.log("user name", user.name, user.surname)
                             comments.push({
                                 content: comment.content,
                                 name,
@@ -362,7 +374,8 @@ class courseController{
                 task: {
                     title: task.title,
                     content: task.content,
-                }
+                },
+                needToCheck: course.needToCheck.length,
             }).status(200);
 
         } catch (e){
@@ -374,7 +387,6 @@ class courseController{
         try{
             const errors = validationResult(req);
             if(!errors.isEmpty()){
-                console.log("errors 0 ", e);
                 return resp.status(400).json({message: "Ошибка оценки ДЗ", errors});
             }
             const {homework_id, course_id, status, comment} = req.body;
@@ -390,7 +402,6 @@ class courseController{
 
 
             if(comment){
-                console.log("here comment exist")
                 const formedComment = await Comment.create({content: comment, type: "TEACHER", author_id: req.CA._id, date: new Date().getTime()});
                 const hmw = await Homework.findOne({_id: homework_id});
                 hmw.comments.push(formedComment._id);
@@ -474,6 +485,112 @@ class courseController{
         }
     }
 
+    async setMeeting(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка установки meeting", errors});
+            }
+            const {course_id, content, title} = req.body;
+
+
+            const course = await Course.findOne({_id: course_id});
+            if(!course.meetings){
+                course.meetings = [];
+            }
+
+            //проверка, что последняя встреча остановлена или её нет, только тогда можно начать новую
+            const lastMeeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
+
+            if(lastMeeting && lastMeeting.active === false || !lastMeeting){
+                const meeting = await Meeting.create({title, content, date: new Date().getTime()});
+                course.meetings.push(meeting._id);
+                await Course.updateOne({_id: course_id}, {meetings: course.meetings})
+
+                resp.json({
+                    meeting: {
+                        title: meeting.title,
+                        content: meeting.content,
+                        signup: meeting.students.includes(req.CA._id),
+                        active: meeting.active,
+                        date: meeting.date,
+                    }
+                }).status(200);
+            } else {
+                resp.status(400).json({message: "Ошибка установки meeting: не завершена прошлая встреча"})
+            }
+
+        }catch (e){
+            resp.status(400).json({message: "Ошибка установки meeting", e})
+        }
+    }
+
+    async stopMeeting(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка остановки meeting", errors});
+            }
+            const {course_id} = req.body;
+            const course = await Course.findOne({_id: course_id});
+
+            await Meeting.updateOne({_id: course.meetings[course.meetings.length - 1]}, {active: false});
+            const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]})
+
+            resp.json({
+                meeting: {
+                    title: meeting.title,
+                    content: meeting.content,
+                    signup: meeting.students.includes(req.CA._id),
+                    active: meeting.active,
+                    date: meeting.date,
+                }
+            }).status(200);
+        }catch (e){
+            resp.status(400).json({message: "Ошибка остановки meeting", errors: e})
+        }
+    }
+
+    async signupForMeeting(req, resp){
+        const errors = validationResult(req);
+        try{
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка отметки присутсвия", errors});
+            }
+            const {course_id} = req.body;
+
+            const course = await Course.findOne({_id: course_id});
+            const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
+
+            if(meeting.active){
+                if(!meeting.students.includes(req.CA._id)){
+                    meeting.students.push(req.CA._id);
+                    meeting.attendance += 1;
+                    await Meeting.updateOne({_id: meeting._id}, {students: meeting.students, attendance: meeting.attendance});
+
+                    return resp.json({
+                        meeting: {
+                            title: meeting.title,
+                            content: meeting.content,
+                            signup: true,
+                            active: meeting.active,
+                            date: meeting.date,
+                        }
+                    });
+                } else {
+                    return resp.status(400).json({message: "Ошибка отметки присутсвия: вы уже отметились"});
+                }
+
+
+            } else {
+                return resp.status(400).json({message: "Ошибка отметки присутсвия: занятие уже завершилось"});
+            }
+        } catch (e){
+            resp.status(400).json({message: "Ошибка отметки присутсвия", errors: e})
+        }
+
+    }
+
     async joinCourse(req, resp){
         try{
             const errors = validationResult(req);
@@ -508,7 +625,6 @@ class courseController{
             resp.json("ok");
 
         }catch (e){
-            console.log("error is", e)
             resp.json({errors: e}).status(400);
         }
     }

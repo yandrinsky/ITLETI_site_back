@@ -71,48 +71,6 @@ router.post(
 
 
 router.post(
-    '/registrationFix',
-    [roleMiddleware(["ADMIN"])],
-    async (req, resp)=> {
-        Course.syncIndexes();
-        User.syncIndexes();
-
-        resp.json("fixed");
-    }
-);
-
-router.post(
-    '/removeAll',
-    // [roleMiddleware(["ADMIN"])],
-    async (req, resp) => {
-        try {
-            //Удалить все CourseAccount, Tasks,
-            //Удалить у users из teaching и learning
-            Course.remove({}, ()=>{})
-            Task.remove({}, ()=>{})
-            CourseAccount.remove({}, ()=>{});
-            Homework.remove({}, ()=>{});
-            Comment.remove({}, ()=>{});
-            User.remove({}, ()=> {});
-            resp.json("all removed")
-        } catch (e){
-            resp.json(e).status(400)
-        }
-
-    }
-)
-
-router.post(
-    '/removeOne',
-    [
-        // roleMiddleware(["ADMIN"]),
-        check('course_id', 'Не указан id курса').notEmpty()
-    ],
-    courseController.deleteCourse,
-
-)
-
-router.post(
     '/sendHomework',
     [
         courseRoleMiddleware(["STUDENT", "TEACHER"])
@@ -150,6 +108,45 @@ router.post(
     courseController.gradeHomework,
 )
 
+router.post(
+    '/setMeeting',
+    [
+        courseRoleMiddleware(["TEACHER"]),
+        check('course_id', '').notEmpty(),
+        check('title', '').notEmpty(),
+        check('content', '').notEmpty(),
+    ],
+    courseController.setMeeting,
+)
+
+router.post(
+    '/stopMeeting',
+    [
+        courseRoleMiddleware(["TEACHER"]),
+        check('course_id', '').notEmpty(),
+    ],
+    courseController.stopMeeting,
+)
+
+router.post(
+    '/signupForMeeting',
+    [
+        courseRoleMiddleware(["STUDENT", "TEACHER"]),
+        check('course_id', '').notEmpty(),
+    ],
+    courseController.signupForMeeting,
+)
+
+router.post(
+    '/registrationFix',
+    [roleMiddleware(["ADMIN"])],
+    async (req, resp)=> {
+        Course.syncIndexes();
+        User.syncIndexes();
+
+        resp.json("fixed");
+    }
+);
 // router.post('/users/changeRole',
 //     [authMiddleware, roleMiddleware(["ADMIN"])],
 //     authController.changeRole
@@ -163,6 +160,36 @@ router.post(
 //     resp.json({html: markdown.toHTML(req.body.message)});
 // });
 
+// router.post(
+//     '/removeOne',
+//     [
+//         // roleMiddleware(["ADMIN"]),
+//         check('course_id', 'Не указан id курса').notEmpty()
+//     ],
+//     courseController.deleteCourse,
+//
+// )
+
+// router.post(
+//     '/removeAll',
+//     // [roleMiddleware(["ADMIN"])],
+//     async (req, resp) => {
+//         try {
+//             //Удалить все CourseAccount, Tasks,
+//             //Удалить у users из teaching и learning
+//             Course.remove({}, ()=>{})
+//             Task.remove({}, ()=>{})
+//             CourseAccount.remove({}, ()=>{});
+//             Homework.remove({}, ()=>{});
+//             Comment.remove({}, ()=>{});
+//             User.remove({}, ()=> {});
+//             resp.json("all removed")
+//         } catch (e){
+//             resp.json(e).status(400)
+//         }
+//
+//     }
+// )
 
 
 
