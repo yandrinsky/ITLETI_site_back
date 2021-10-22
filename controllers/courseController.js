@@ -15,6 +15,7 @@ import {validationResult} from "express-validator";
 
 import fs from "fs"
 import path from "path"
+import Grade from "../models/Grade.js";
 
 
 
@@ -503,7 +504,9 @@ class courseController{
             const lastMeeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
 
             if(lastMeeting && lastMeeting.active === false || !lastMeeting){
-                const meeting = await Meeting.create({title, content, date: new Date().getTime()});
+                const grade = await Grade.create({});
+                const meeting = await Meeting.create({title, content, grade: grade._id, date: new Date().getTime()});
+
                 course.meetings.push(meeting._id);
                 await Course.updateOne({_id: course_id}, {meetings: course.meetings})
 
@@ -521,6 +524,7 @@ class courseController{
             }
 
         }catch (e){
+            console.log(e)
             resp.status(400).json({message: "Ошибка установки meeting", e})
         }
     }
@@ -587,6 +591,84 @@ class courseController{
             }
         } catch (e){
             resp.status(400).json({message: "Ошибка отметки присутсвия", errors: e})
+        }
+    }
+
+    async gradeMeeting(req, resp){
+        const errors = validationResult(req);
+        try{
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка отметки присутсвия", errors});
+            }
+            const {course_id, mark, comment} = req.body;
+
+            const course = await Course.findOne({_id: course_id});
+            const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
+            const grade = await Grade.findOne({_id: meeting.grade});
+
+
+            if(meeting && !meeting.active){
+                if(!grade.accounts.includes(req.CA._id)){
+                    grade.accounts.push(req.CA._id)
+                    if(mark !== null){ //если пользователь НЕ отказался от опроса
+                        grade[mark] += 1;
+                        if(comment){
+                            const newComment = await Comment.create({
+                                author_id: null,
+                                type: "STUDENT",
+                                date: new Date().getTime(),
+                                content: comment,
+                            })
+                            grade.comments.push(newComment._id);
+                        }
+                        await Grade.updateOne({_id: grade._id},
+                            {
+                                [mark]: grade[mark],
+                                comments: grade.comments,
+                                accounts: grade.accounts,
+                            });
+                    } else {
+                        await Grade.updateOne({_id: grade._id},{ accounts: grade.accounts });
+                    }
+                    resp.json({message: "ok"}).status(200);
+                } else {
+                    return resp.status(400).json({message: "Ошибка оценки занятия: вы уже проголосовали"});
+                }
+            } else {
+                return resp.status(400).json({message: "Ошибка оценки занятия: занятие еще не завершилось"});
+            }
+        } catch (e){
+            resp.status(400).json({message: "Неизвестная ошибка оценки занятия", errors: e})
+        }
+    }
+
+    async shouldGradeMeeting(req, resp){
+        const errors = validationResult(req);
+        try{
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка отметки присутсвия", errors});
+            }
+            const {course_id} = req.body;
+
+            const course = await Course.findOne({_id: course_id});
+            const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
+            const grade = await Grade.findOne({_id: meeting.grade});
+
+
+            if(meeting && !meeting.active){
+                if(!grade.accounts.includes(req.CA._id) && meeting.students.includes(req.CA._id)){
+                    resp.json({grade: {
+                            title: meeting.title,
+                            date: meeting.date,
+                        }}).status(200);
+                } else {
+                    return resp.status(200).json({grade: null});
+                }
+            } else {
+                return resp.status(400).json({grade: null});
+            }
+        } catch (e){
+            resp.status(400).json({message: "Неизвестная ошибка запроса оценки занятия", errors: e})
         }
 
     }
@@ -709,6 +791,23 @@ class courseController{
         }
     }
 
+    // async specFixMeeting(req, resp){
+    //     try{
+    //         await Meeting.syncIndexes();
+    //         const meeting = await Meeting.findOne({_id: "616eeae75d04f5ed21a1215d"});
+    //         const grade = await Grade.create({});
+    //         meeting.grade = grade._id;
+    //         await Meeting.updateOne({_id: meeting._id}, {grade});
+    //         resp.json({message: "ok"});
+    //     } catch (e) {
+    //         console.log(e)
+    //         resp.status(400).json({message: "error"})
+    //     }
+    //
+    // }
+
 }
+
+
 
 export default new courseController();

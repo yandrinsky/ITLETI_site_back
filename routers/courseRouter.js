@@ -13,6 +13,7 @@ const router = new Router();
 import path from "path";
 import User from "../models/User.js";
 import courseRoleMiddleware from "../middleware/courseRoleMiddleware.js";
+import Grade from "../models/Grade.js";
 
 
 
@@ -64,7 +65,7 @@ router.post(
         check('course_id', "Не указан id курса").notEmpty(),
         check('title', "Не указан заголовок задачи").notEmpty(),
         check('content', "Не указано описание задачи").notEmpty(),
-        courseRoleMiddleware(["TEACHER"]),
+        // courseRoleMiddleware(["TEACHER"]),
     ],
     courseController.setTask
 )
@@ -137,16 +138,45 @@ router.post(
     courseController.signupForMeeting,
 )
 
+
+
 router.post(
     '/registrationFix',
-    [roleMiddleware(["ADMIN"])],
+    // [roleMiddleware(["ADMIN"])],
     async (req, resp)=> {
-        Course.syncIndexes();
-        User.syncIndexes();
+        // Course.syncIndexes();
+        // User.syncIndexes();
+        Grade.syncIndexes();
 
         resp.json("fixed");
     }
 );
+
+router.post(
+    '/shouldGradeMeeting',
+    [
+        courseRoleMiddleware(["STUDENT", "TEACHER"]),
+        check("course_id", "").notEmpty(),
+    ],
+    courseController.shouldGradeMeeting,
+)
+
+
+router.post(
+    '/gradeMeeting',
+    [
+        courseRoleMiddleware(["STUDENT"]),
+        check("course_id", "").notEmpty(),
+    ],
+    courseController.gradeMeeting,
+)
+
+// router.post("/specFixMeeting",
+//     courseController.specFixMeeting
+// )
+
+
+
 // router.post('/users/changeRole',
 //     [authMiddleware, roleMiddleware(["ADMIN"])],
 //     authController.changeRole

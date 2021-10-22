@@ -6,6 +6,7 @@ const Meeting = new mongoose.Schema({
     title: String,
     content: String,
     active: {type: Boolean, default: true},
+    grade: {type: String, ref: "Grade"},
     date: Date,
 })
 
