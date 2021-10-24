@@ -65,7 +65,8 @@ router.post(
         check('course_id', "Не указан id курса").notEmpty(),
         check('title', "Не указан заголовок задачи").notEmpty(),
         check('content', "Не указано описание задачи").notEmpty(),
-        // courseRoleMiddleware(["TEACHER"]),
+        check('status', "Не указан статус задачи").notEmpty(),
+        courseRoleMiddleware(["TEACHER"]),
     ],
     courseController.setTask
 )
@@ -87,7 +88,7 @@ router.post(
 router.post(
     '/joinCourse',
     [
-        check('course_id', 'Не указан id курса').notEmpty()
+        check('course_id', 'Не указан id курса').notEmpty(),
     ],
     courseController.joinCourse,
 )
@@ -142,7 +143,7 @@ router.post(
 
 router.post(
     '/registrationFix',
-    // [roleMiddleware(["ADMIN"])],
+    [roleMiddleware(["ADMIN"])],
     async (req, resp)=> {
         // Course.syncIndexes();
         // User.syncIndexes();

@@ -169,7 +169,6 @@ class courseController{
                     description,
                     preview,
                     articles,
-                    notifications,
                     tasks,
                     role: req.CA.role,
                     meeting: meeting ? meeting : null,
@@ -234,21 +233,28 @@ class courseController{
             if(!errors.isEmpty()){
                 return resp.status(400).json({message: "Ошибка при добавлении задачи", errors});
             }
-            const {course_id, title, content} = req.body;
+            const {course_id, title, content, status, task_id} = req.body;
             const author_id = "614c97a97ab68cf71472a5ed" //тестовый id зареганого меня
 
 
             //находим курс
             const course = await Course.findOne({_id: course_id});
             if(course){
-                //создаём таск
-                const task = await Task.create({author_id, course_id, title, content});
-                //Добовляем id нового task в массив task'ов
-                course.tasks.push(task._id);
+                let task = await Task.findOne({_id: task_id});
+                //Проверяем, нужно обновить задачу или добавить новую
+                if(task) {
+                    await Task.updateOne({_id: task_id}, {title, content, status})
+                    resp.json({message: "ok"})
+                } else {
+                    //создаём таск
+                    task = await Task.create({author_id, course_id, title, content, status});
+                    //Добовляем id нового task в массив task'ов
+                    course.tasks.push(task._id);
 
-                //Обновляем курс
-                await Course.updateOne({_id: course_id}, {tasks: course.tasks});
-                resp.json("ok").status(200);
+                    //Обновляем курс
+                    await Course.updateOne({_id: course_id}, {tasks: course.tasks});
+                    resp.json("ok").status(200);
+                }
             } else {
                 resp.json(error("Курс не найден")).status(400);
             }
@@ -469,7 +475,9 @@ class courseController{
             }
 
             if(CA.homeworks){
-                CA.homeworks.push(homework._id)
+                if(!CA.homeworks.includes(homework._id)){
+                    CA.homeworks.push(homework._id)
+                }
             } else {
                 CA.homeworks = [homework._id]
             }
