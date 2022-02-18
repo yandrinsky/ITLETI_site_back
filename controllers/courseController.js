@@ -200,6 +200,7 @@ class courseController{
                 }
             )
         } catch (e){
+            console.log("getCourseTasks error", e);
             resp.status(400);
         }
     }
@@ -231,11 +232,11 @@ class courseController{
         try{
             const errors = validationResult(req);
             if(!errors.isEmpty()){
+                console.log("req body", req.body);
                 return resp.status(400).json({message: "Ошибка при добавлении задачи", errors});
             }
-            const {course_id, title, content, status, task_id} = req.body;
+            const {course_id, title, content, lang, type, contentType, isFrame, frameOption, resource, status, task_id} = req.body;
             const author_id = "614c97a97ab68cf71472a5ed" //тестовый id зареганого меня
-
 
             //находим курс
             const course = await Course.findOne({_id: course_id});
@@ -243,11 +244,14 @@ class courseController{
                 let task = await Task.findOne({_id: task_id});
                 //Проверяем, нужно обновить задачу или добавить новую
                 if(task) {
-                    await Task.updateOne({_id: task_id}, {title, content, status})
+                    await Task.updateOne({_id: task_id},
+                        {title, content, status, lang, type, contentType, frame: isFrame, resource, frameOption})
                     resp.json({message: "ok"})
                 } else {
                     //создаём таск
-                    task = await Task.create({author_id, course_id, title, content, status});
+                    task = await Task.create({
+                        author_id, course_id, title, content, status, lang, type, contentType, resource, frame: isFrame, frameOption
+                    });
                     //Добовляем id нового task в массив task'ов
                     course.tasks.push(task._id);
 
@@ -311,10 +315,12 @@ class courseController{
                         ableToSend = true;
                     }
 
-                    let type = getHomeworkType(homework);
 
-                    if(!type){
-                        type = task.status
+                    //let type = getHomeworkType(homework);
+                    let status = getHomeworkType(homework);
+
+                    if(!status){
+                        status = task.status
                     }
 
                     if(homework && homework.comments.length !== 0){
@@ -332,16 +338,88 @@ class courseController{
                         }
                     }
 
-                    const {_id, title, content, status} = task;
-                    resp.json({id: _id, title, content,
-                         status, homework: homework && homework.content ? homework.content : "",
-                         ableToSend, type, comments}).status(200)
+                    const {_id, title, content, type, contentType, lang, resource, frameOption, frame} = task;
+                    resp.json(
+                        {id: _id, title, content,
+                             status, homework: homework && homework.content ? homework.content : "",
+                             ableToSend, type, comments, contentType, lang, resource, frameOption, frame
+                        }).status(200)
                 } else {
                     resp.json(error("Вы не принадлежите к группе курса")).status(400);
                 }
             } else {
                 resp.json(error("Курс не существует")).status(400);
             }
+        } catch(e){
+            console.log("error", e)
+        }
+    }
+
+    async deleteTask(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка при добавлении задачи", errors});
+            }
+
+
+            const {task_id} = req.body;
+
+            //Находим задачу
+            const task = await Task.findOne({_id: task_id});
+            if(!task){
+                resp.json(error("Задача не найдена")).status(400);
+                return;
+            }
+            const homeworks = await Homework.find({task_id: task_id});
+
+            //находим курс
+            const course = await Course.findOne({_id: task.course_id});
+            if(course){
+                course.tasks.splice(course.tasks.indexOf(task_id), 1); //Удаляем задачу из курса
+                //Удаляем все домашки связанные с задачей из курса
+                homeworks.forEach(hmw => {
+                    let index = course.needToCheck.indexOf(hmw._id);
+                    if(index !== -1){
+                        course.needToCheck.splice(index, 1);
+                    }
+                })
+
+
+                //Обновляем курс
+                await course.update({tasks: course.tasks, needToCheck: course.needToCheck});
+            }
+            //Удаляем домашки
+            homeworks.forEach(hmw => {
+                hmw.delete();
+            })
+            //Удаляем задачу
+            task.delete();
+
+
+            // if(course){
+            //
+            //     //Проверяем, нужно обновить задачу или добавить новую
+            //     if(task) {
+            //         await Task.updateOne({_id: task_id},
+            //             {title, content, status, lang, type, contentType, frame: isFrame, resource, frameOption})
+            //         resp.json({message: "ok"})
+            //     } else {
+            //         //создаём таск
+            //         task = await Task.create({
+            //             author_id, course_id, title, content, status, lang, type, contentType, resource, frame: isFrame, frameOption
+            //         });
+            //         //Добовляем id нового task в массив task'ов
+            //         course.tasks.push(task._id);
+            //
+            //         //Обновляем курс
+            //         await Course.updateOne({_id: course_id}, {tasks: course.tasks});
+            //         resp.json("ok").status(200);
+            //     }
+            // } else {
+            //     resp.json(error("Курс не найден")).status(400);
+            // }
+            resp.json("ok").status(200);
         } catch(e){
             console.log("error", e)
         }
@@ -381,6 +459,8 @@ class courseController{
                 task: {
                     title: task.title,
                     content: task.content,
+                    frame: task.frame,
+                    frameOption: task.frameOption,
                 },
                 needToCheck: course.needToCheck.length,
             }).status(200);
@@ -661,10 +741,9 @@ class courseController{
             const course = await Course.findOne({_id: course_id});
             const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
             const grade = await Grade.findOne({_id: meeting.grade});
-
-
+            //console.log("req.CA._id", req.CA._id);
             if(meeting && !meeting.active){
-                if(!grade.accounts.includes(req.CA._id) && meeting.students.includes(req.CA._id)){
+                if(!grade.accounts.includes(req.CA._id) && meeting.students.includes(req.CA._id) && !course.teachers.includes(req.CA._id)){
                     resp.json({grade: {
                             title: meeting.title,
                             date: meeting.date,

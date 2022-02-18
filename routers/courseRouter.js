@@ -71,6 +71,15 @@ router.post(
     courseController.setTask
 )
 
+router.post(
+    '/deleteTask',
+    [
+        check('task_id', "Не указан id задачи").notEmpty(),
+        courseRoleMiddleware(["TEACHER"]),
+    ],
+    courseController.deleteTask
+)
+
 
 router.post(
     '/sendHomework',
@@ -171,6 +180,8 @@ router.post(
     ],
     courseController.gradeMeeting,
 )
+
+router.get
 
 // router.post("/specFixMeeting",
 //     courseController.specFixMeeting

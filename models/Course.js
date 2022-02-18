@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const Course = new mongoose.Schema({
     title: {type: String, required: true, unique: false},
     join: {type: Boolean, default: true},
-    description: {type: String, default: "Шаблон описания курса"},
+    description: {type: String, default: "Краткое описание курса"},
+    about: {type: String, default: "Развёрнутое описание курса"},
     preview: {type: String, default: "logo_it_leti.jpg"},
     status: {type: String, default: "active"}, // active / passive / archived
     authors: [{type: String, ref: 'CourseAccount'}],
