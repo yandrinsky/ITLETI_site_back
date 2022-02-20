@@ -5,11 +5,12 @@ const Course = new mongoose.Schema({
     join: {type: Boolean, default: true},
     description: {type: String, default: "Краткое описание курса"},
     about: {type: String, default: "Развёрнутое описание курса"},
+    conversation_link: {type: String},
     preview: {type: String, default: "logo_it_leti.jpg"},
     status: {type: String, default: "active"}, // active / passive / archived
     authors: [{type: String, ref: 'CourseAccount'}],
     teachers: [{type: String, ref: 'CourseAccount'}],
-    students: [{type: String, ref: 'CourseAccount'}],
+    students: [{type: Array, ref: 'CourseAccount'}],
     articles: [{type: String, ref: 'Article'}],
     notifications: [{type: String, ref: 'Notification'}],
     tasks: [{type: String, ref: 'Task'}],

@@ -29,6 +29,11 @@ router.get(
     courseController.getCourseById
 );
 
+router.get(
+    '/about/:id',
+    courseController.getAboutCourseById
+);
+
 router.post(
     '/getTasks',
     [
@@ -53,6 +58,9 @@ router.post(
     [
         check('title', "Не указано имя курса").notEmpty(),
         check('description', "Не указано имя курса").notEmpty(),
+        check('conversation_link', "Не указана ссылка на беседу").notEmpty(),
+        check('about', "Не указано описание курса").notEmpty(),
+        check('preview', "Не указано название preview").notEmpty(),
     ],
     courseController.registration
 );

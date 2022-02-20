@@ -8,18 +8,37 @@ import Role from "../models/Role.js";
 
 const router = new Router();
 
+
+router.post('/login', [
+    check('vk_id', 'Вк не может быть пустым').notEmpty(),
+], authController.login);
+
 router.post(
     '/registration',
     [
-        check('username', 'Имя пользователя не может быть пустым').notEmpty(),
-        check('password', 'Пароль должен быть более 4 но менее 10 символов').isLength({max: 30, min: 4}),
+        // check('username', 'Имя пользователя не может быть пустым').notEmpty(),
+        // check('password', 'Пароль должен быть более 4 но менее 10 символов').isLength({max: 30, min: 4}),
         check('name', 'Имя не может быть пустым').notEmpty(),
         check('surname', 'Фамилия не может быть пустой').notEmpty(),
         check('group', 'Группа не может быть пустой').notEmpty(),
-        check('vk', 'Вк не может быть пустым').notEmpty(),
+        check('vk_link', 'Вк не может быть пустым').notEmpty(),
+        check('vk_id', 'Вк не может быть пустым').notEmpty(),
     ],
     authController.registration
 );
+
+// router.post(
+//     '/registration',
+//     [
+//         check('username', 'Имя пользователя не может быть пустым').notEmpty(),
+//         check('password', 'Пароль должен быть более 4 но менее 10 символов').isLength({max: 30, min: 4}),
+//         check('name', 'Имя не может быть пустым').notEmpty(),
+//         check('surname', 'Фамилия не может быть пустой').notEmpty(),
+//         check('group', 'Группа не может быть пустой').notEmpty(),
+//         check('vk', 'Вк не может быть пустым').notEmpty(),
+//     ],
+//     authController.registration
+// );
 
 router.post(
     '/validToken',
@@ -27,14 +46,22 @@ router.post(
         check('token').notEmpty(),
     ],
     authController.validToken,
-
 )
+
+router.post(
+    '/testMessage',
+    [
+        check('user_id').notEmpty,
+    ],
+    authController.testMessage
+)
+
 router.post('/users/changeRole',
     [authMiddleware, roleMiddleware(["ADMIN"])],
     authController.changeRole
 );
 
-router.post('/login', authController.login);
+
 
 router.get('/users', [authMiddleware, roleMiddleware(["ADMIN"])], authController.getUsers);
 

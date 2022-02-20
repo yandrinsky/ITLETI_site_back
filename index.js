@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import authRouter from "./routers/authRouter.js";
 import courseRouter from "./routers/courseRouter.js";
 import cors from "cors";
+import {sendMessage, testMessage} from "./VK/bot/bot.js";
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,7 +28,6 @@ const start = async () => {
     try{
         await mongoose.connect(BASE_URL)
         app.listen(PORT, () => console.log("Server started on port" + PORT))
-
     } catch (e){
         console.log("cant access to server");
         console.error(e);

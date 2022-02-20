@@ -16,6 +16,7 @@ import {validationResult} from "express-validator";
 import fs from "fs"
 import path from "path"
 import Grade from "../models/Grade.js";
+import {sendMessage} from "../VK/bot/bot.js";
 
 
 
@@ -141,12 +142,35 @@ class courseController{
         }
     }
 
+    async getAboutCourseById(req, resp){
+        try{
+            const course = await Course.findOne({_id: req.params.id});
+            let teachers;
+            teachers = await prepTeachersName(course.teachers);
+            const {_id, title, description, preview, about} = course
+
+
+            resp.json(
+                {
+                    id: _id,
+                    title,
+                    description,
+                    about,
+                    preview,
+                }
+
+            )
+        } catch (e){
+            resp.status(400);
+        }
+    }
+
     async getCourseById(req, resp){
         try{
             const course = await Course.findOne({_id: req.params.id});
             let teachers;
             teachers = await prepTeachersName(course.teachers);
-            const {_id, title, description, preview, articles, notifications, tasks, meetings} = course
+            const {_id, title, description, preview, articles, notifications, tasks, meetings, about} = course
 
             let meeting = await Meeting.findOne({_id: meetings[meetings.length - 1]});
             if(meetings.length > 0 && meeting){
@@ -167,6 +191,7 @@ class courseController{
                     id: _id,
                     title,
                     description,
+                    about,
                     preview,
                     articles,
                     tasks,
@@ -207,10 +232,10 @@ class courseController{
 
     async registration(req, resp){
         try{
-            const {title, description} = req.body;
+            const {title, description, conversation_link, about, preview} = req.body;
             const user_id = TEST.user_id; //сменить на юзера из токена
 
-            const course = await Course.create({title, description, preview: "logo_it_leti.jpg"}); //создаём курс
+            const course = await Course.create({title, description, conversation_link, about, preview}); //создаём курс
             //создаём аккаунт курса с ролью учителя
             const cAccount = await CourseAccount.create({course_id: course._id, user_id, role: "TEACHER"})
             const user = await User.findOne({_id: user_id})
@@ -220,7 +245,8 @@ class courseController{
 
             //Добавляем в аккаунт создателя id аккаунта курса
             user.teaching.push(cAccount._id);
-            let res = await User.updateOne({_id: user_id}, {teaching: user.teaching})
+            await User.updateOne({_id: user_id}, {teaching: user.teaching});
+
             resp.json("ok").status(200);
         } catch(e){
             console.log("error", e)
@@ -740,9 +766,9 @@ class courseController{
 
             const course = await Course.findOne({_id: course_id});
             const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
-            const grade = await Grade.findOne({_id: meeting.grade});
             //console.log("req.CA._id", req.CA._id);
             if(meeting && !meeting.active){
+                const grade = await Grade.findOne({_id: meeting.grade});
                 if(!grade.accounts.includes(req.CA._id) && meeting.students.includes(req.CA._id) && !course.teachers.includes(req.CA._id)){
                     resp.json({grade: {
                             title: meeting.title,
@@ -755,12 +781,14 @@ class courseController{
                 return resp.status(400).json({grade: null});
             }
         } catch (e){
+            console.log("shouldGradeMeeting error", e);
             resp.status(400).json({message: "Неизвестная ошибка запроса оценки занятия", errors: e})
         }
 
     }
 
     async joinCourse(req, resp){
+        console.log("joinCourse");
         try{
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -771,13 +799,14 @@ class courseController{
             if(!token){
                 return resp.status(403).json({message: "Пользователь не авторизован"});
             }
+
             let userData = jwt.verify(token, secret);
             const user_id = userData.id;
 
             const {course_id} = req.body;
             const CA = await CourseAccount.create({course_id, user_id})
 
-            const course = await Course.find({_id: course_id});
+            const course = await Course.findOne({_id: course_id});
 
             if(course.students){
                 course.students.push(CA._id);
@@ -791,6 +820,9 @@ class courseController{
             user.learning.push(CA._id)
             await User.updateOne({_id: user_id}, {learning: user.learning})
 
+
+            let message = await createJoinCourseMessage(course);
+            await sendMessage(message, userData.vk_id);
             resp.json("ok");
 
         }catch (e){
@@ -895,6 +927,31 @@ class courseController{
 
 }
 
+async function createJoinCourseMessage(course){
+    console.log("course", course);
+    let message = `Вы записались на курс ${course.title}\n\n`
+    if(course.meetings && course.meetings.length > 0){
+        let firstMeeting = await Meeting.findOne({_id: course.meetings[0]});
+        let date = new Date(firstMeeting.date);
+        let firstMeetingDate = String(date.getDate()).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
 
+
+        message += `Курс уже начался. Занятий прошло: ${course.meetings.length}\n`
+        message += `Дата первого занятия (${firstMeeting.title}): ${firstMeetingDate}\n`
+        if(course.meetings.length > 1){
+            let lastMeeting = await Meeting.findOne({_id: course.meetings[course.meetings.length -1]});
+            let date = new Date(lastMeeting.date);
+            let lastMeetingDate = String(date.getDate()).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
+            message += `Дата последнего занятия (${lastMeeting.title}): ${lastMeetingDate}\n`
+        }
+    } else {
+        message += `Курс ещё не начался.\n`
+    }
+    if(course.students){
+        message += `Студентов на курсе: ${course.students.length}\n\n`;
+    }
+    message += `Беседа для студентов: ${course.conversation_link || "информации нет"}`;
+    return message;
+}
 
 export default new courseController();
