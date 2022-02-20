@@ -788,7 +788,6 @@ class courseController{
     }
 
     async joinCourse(req, resp){
-        console.log("joinCourse");
         try{
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -802,28 +801,33 @@ class courseController{
 
             let userData = jwt.verify(token, secret);
             const user_id = userData.id;
-
             const {course_id} = req.body;
-            const CA = await CourseAccount.create({course_id, user_id})
 
-            const course = await Course.findOne({_id: course_id});
+            const CA = await CourseAccount.findOne({user_id, course_id});
+            if(!CA){
+                const CA = await CourseAccount.create({course_id, user_id})
 
-            if(course.students){
-                course.students.push(CA._id);
+                const course = await Course.findOne({_id: course_id});
+
+                if(course.students){
+                    course.students.push(CA._id);
+                } else {
+                    course.students = [CA._id]
+                }
+
+                await Course.updateOne({_id: course_id}, {students: course.students})
+
+                const user = await User.findOne({_id: user_id})
+                user.learning.push(CA._id)
+                await User.updateOne({_id: user_id}, {learning: user.learning})
+
+
+                let message = await createJoinCourseMessage(course);
+                await sendMessage(message, userData.vk_id);
+                resp.json("ok");
             } else {
-                course.students = [CA._id]
+                resp.json(error("Вы уже зарегистрированы на курсе")).status(400);
             }
-
-            await Course.updateOne({_id: course_id}, {students: course.students})
-
-            const user = await User.findOne({_id: user_id})
-            user.learning.push(CA._id)
-            await User.updateOne({_id: user_id}, {learning: user.learning})
-
-
-            let message = await createJoinCourseMessage(course);
-            await sendMessage(message, userData.vk_id);
-            resp.json("ok");
 
         }catch (e){
             resp.json({errors: e}).status(400);

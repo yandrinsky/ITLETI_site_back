@@ -9,10 +9,10 @@ import {sendMessage, testMessage} from "./VK/bot/bot.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 //production
-const BASE_URL = `mongodb+srv://it_leti:letsDoThisGreat2021@cluster0.fk7tq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+//const BASE_URL = `mongodb+srv://it_leti:letsDoThisGreat2021@cluster0.fk7tq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 //dev
-//const BASE_URL = `mongodb+srv://yandrinsky:yandrinsky@cluster0.kgtqq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const BASE_URL = `mongodb+srv://yandrinsky:yandrinsky@cluster0.kgtqq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 
 app.use(express.json());
