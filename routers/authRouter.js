@@ -48,13 +48,13 @@ router.post(
     authController.validToken,
 )
 
-router.post(
-    '/testMessage',
-    [
-        check('user_id').notEmpty,
-    ],
-    authController.testMessage
-)
+// router.post(
+//     '/testMessage',
+//     [
+//         check('user_id').notEmpty,
+//     ],
+//     authController.testMessage
+// )
 
 router.post('/users/changeRole',
     [authMiddleware, roleMiddleware(["ADMIN"])],

@@ -910,6 +910,41 @@ class courseController{
         }
     }
 
+    async setTeacher(req, resp){
+        try{
+            const {course_id, vk_id, user_id} = req.body;
+            let course = await Course.findOne({_id: course_id});
+
+            if(course){
+                let user;
+                if(user_id){
+                    user = await User.findOne({_id: user_id});
+                } else if(vk_id){
+                    user = await User.findOne({vk_id});
+                }
+
+                if(user){
+                    let CA = await CourseAccount.findOne({user_id: user._id, course_id});
+                    if(CA){
+                        await CourseAccount.updateOne({_id: CA._id}, {role: "TEACHER"});
+                        await Course.updateOne({_id: course._id}, {teachers: course.teachers.push(CA._id)});
+                        resp.json("ok").status(200);
+                    } else {
+                        resp.json(error("Пользователь не зарегистрирован на курсе")).status(400);
+                    }
+                } else {
+                    resp.json(error("Пользователь не найден")).status(400);
+                }
+            } else {
+                resp.json(error("Курс не найден")).status(400);
+            }
+
+
+        } catch (e){
+            resp.json(e).status(400);
+        }
+    }
+
     // async specFixMeeting(req, resp){
     //     try{
     //         await Meeting.syncIndexes();

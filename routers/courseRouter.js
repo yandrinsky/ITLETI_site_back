@@ -56,6 +56,9 @@ router.post(
 router.post(
     '/registration',
     [
+        roleMiddleware(["ADMIN"]),
+    ],
+    [
         check('title', "Не указано имя курса").notEmpty(),
         check('description', "Не указано имя курса").notEmpty(),
         check('conversation_link', "Не указана ссылка на беседу").notEmpty(),
@@ -70,11 +73,13 @@ router.post(
 router.post(
     '/setTask',
     [
+        courseRoleMiddleware(["TEACHER"])
+    ],
+    [
         check('course_id', "Не указан id курса").notEmpty(),
         check('title', "Не указан заголовок задачи").notEmpty(),
         check('content', "Не указано описание задачи").notEmpty(),
         check('status', "Не указан статус задачи").notEmpty(),
-        courseRoleMiddleware(["TEACHER"]),
     ],
     courseController.setTask
 )
@@ -104,6 +109,7 @@ router.post(
 
 router.post(
     '/joinCourse',
+    [courseRoleMiddleware(["STUDENT"])],
     [
         check('course_id', 'Не указан id курса').notEmpty(),
     ],
@@ -189,7 +195,7 @@ router.post(
     courseController.gradeMeeting,
 )
 
-router.get
+
 
 // router.post("/specFixMeeting",
 //     courseController.specFixMeeting
@@ -201,14 +207,9 @@ router.get
 //     [authMiddleware, roleMiddleware(["ADMIN"])],
 //     authController.changeRole
 // );
-//
-// router.post('/login', authController.login);
+
 // router.get('/users', [authMiddleware, roleMiddleware(["ADMIN"])], authController.getUsers);
-//
-// router.post('/markdown', (req, resp) => {
-//     console.log(req.body);
-//     resp.json({html: markdown.toHTML(req.body.message)});
-// });
+
 
 // router.post(
 //     '/removeOne',
@@ -220,26 +221,31 @@ router.get
 //
 // )
 
-router.post(
-    '/removeAll',
-    // [roleMiddleware(["ADMIN"])],
-    async (req, resp) => {
-        try {
-            //Удалить все CourseAccount, Tasks,
-            //Удалить у users из teaching и learning
-            Course.remove({}, ()=>{})
-            Task.remove({}, ()=>{})
-            CourseAccount.remove({}, ()=>{});
-            Homework.remove({}, ()=>{});
-            Comment.remove({}, ()=>{});
-            User.remove({}, ()=> {});
-            resp.json("all removed")
-        } catch (e){
-            resp.json(e).status(400)
-        }
+// router.post(
+//     '/removeAll',
+//     [roleMiddleware(["ADMIN"])],
+//     async (req, resp) => {
+//         try {
+//             //Удалить все CourseAccount, Tasks,
+//             //Удалить у users из teaching и learning
+//             Course.remove({}, ()=>{})
+//             Task.remove({}, ()=>{})
+//             CourseAccount.remove({}, ()=>{});
+//             Homework.remove({}, ()=>{});
+//             Comment.remove({}, ()=>{});
+//             User.remove({}, ()=> {});
+//             resp.json("all removed")
+//         } catch (e){
+//             resp.json(e).status(400)
+//         }
+//
+//     }
+// )
 
-    }
-)
+// router.post(
+//     "/setTeacher",
+//     courseController.setTeacher,
+// )
 
 
 
