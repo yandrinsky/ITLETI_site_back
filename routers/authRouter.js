@@ -81,6 +81,8 @@ router.get('/users', [authMiddleware, roleMiddleware(["ADMIN"])], authController
 //
 // })
 
-
+// router.post("/specFixUsers",
+//     authController.specFixUsers
+// )
 
 export default router;

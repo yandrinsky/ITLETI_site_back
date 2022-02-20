@@ -78,6 +78,7 @@ class authController {
             return resp.status(200).json(res);
         } catch (e){
             console.error(e);
+
             resp.status(400).json({message: "Registration error"});
         }
     }
@@ -183,6 +184,16 @@ class authController {
         } catch (e) {
             return resp.status(400).json({message: "Ошибка при обновлении роли"});
         }
+    }
+    async specFixUsers(req, resp){
+        try{
+            await User.syncIndexes();
+            resp.json({message: "ok"});
+        } catch (e) {
+            console.log(e)
+            resp.status(400).json({message: "error"})
+        }
+
     }
 }
 
