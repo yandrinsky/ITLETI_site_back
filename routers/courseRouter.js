@@ -220,26 +220,26 @@ router.get
 //
 // )
 
-// router.post(
-//     '/removeAll',
-//     // [roleMiddleware(["ADMIN"])],
-//     async (req, resp) => {
-//         try {
-//             //Удалить все CourseAccount, Tasks,
-//             //Удалить у users из teaching и learning
-//             Course.remove({}, ()=>{})
-//             Task.remove({}, ()=>{})
-//             CourseAccount.remove({}, ()=>{});
-//             Homework.remove({}, ()=>{});
-//             Comment.remove({}, ()=>{});
-//             User.remove({}, ()=> {});
-//             resp.json("all removed")
-//         } catch (e){
-//             resp.json(e).status(400)
-//         }
-//
-//     }
-// )
+router.post(
+    '/removeAll',
+    // [roleMiddleware(["ADMIN"])],
+    async (req, resp) => {
+        try {
+            //Удалить все CourseAccount, Tasks,
+            //Удалить у users из teaching и learning
+            Course.remove({}, ()=>{})
+            Task.remove({}, ()=>{})
+            CourseAccount.remove({}, ()=>{});
+            Homework.remove({}, ()=>{});
+            Comment.remove({}, ()=>{});
+            User.remove({}, ()=> {});
+            resp.json("all removed")
+        } catch (e){
+            resp.json(e).status(400)
+        }
+
+    }
+)
 
 
 
