@@ -21,7 +21,7 @@ router.post(
         check('name', 'Имя не может быть пустым').notEmpty(),
         check('surname', 'Фамилия не может быть пустой').notEmpty(),
         check('group', 'Группа не может быть пустой').notEmpty(),
-        check('vk_link', 'Вк не может быть пустым').notEmpty(),
+        // check('vk_link', 'Вк не может быть пустым').notEmpty(),
         check('vk_id', 'Вк не может быть пустым').notEmpty(),
     ],
     authController.registration

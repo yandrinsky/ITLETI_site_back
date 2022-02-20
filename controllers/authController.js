@@ -65,7 +65,7 @@ class authController {
 
             let res = await testMessage(vk_id);
             if(res === true){
-                await User.create({name, surname, roles: ["USER"], group, vk_id, vk_link});
+                await User.create({name, surname, roles: ["USER"], group, vk_id});
                 sendMessage(`
                     Вы успешно зарегистрировались на сайте IT-ЛЭТИ.\n\n
                     Подробнее ознакомиться с IT-ЛЭТИ:
@@ -86,18 +86,28 @@ class authController {
         try{
             const errors = validationResult(req);
             if(!errors.isEmpty()){
-                console.log("req.body", req.body);
+                //console.log("req.body", req.body);
+                console.log("Ошибка при логинизации");
                 return resp.status(400).json({message: "Ошибка при логинизации", errors});
             }
 
-            const {vk_id, expire, mid, sid, cookie} = req.body;
+            const {vk_id, expire, mid, sid, cookie, secret} = req.body;
             const secretKey = vk_secretKey;
             const sig = req.body.sig ? req.body.sig : cookie.split("&").splice(-1)[0].split("=")[1];
             if(md5((cookie ?
                 cookie.split("&").slice(0, -1).join("") + secretKey :
-                `expire=${expire}mid=${mid}secret=oauthsid=${sid}` + secretKey)) !== sig)
+                `expire=${expire}mid=${mid}secret=${secret}sid=${sid}`+ secretKey)) !== sig)
             {
+                console.log("expire", expire);
+                console.log("mid", mid);
+                console.log("secret", secret);
+                console.log("sid", sid);
+
+                console.log("sig", sig);
+                console.log("md5", md5((`expire=${expire}mid=${mid}secret=${secret}sid=${sid}` + secretKey)));
+
                 resp.status(400).json({message: "Login error: не прошла проверка подписи"});
+
                 return;
             }
 
