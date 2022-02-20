@@ -22,6 +22,7 @@ router.get(
     '/',
     courseController.get
 );
+
 //Получить информацию по конкретному курсу
 router.get(
     '/:id',
@@ -109,7 +110,6 @@ router.post(
 
 router.post(
     '/joinCourse',
-    [courseRoleMiddleware(["STUDENT"])],
     [
         check('course_id', 'Не указан id курса').notEmpty(),
     ],
@@ -195,6 +195,11 @@ router.post(
     courseController.gradeMeeting,
 )
 
+// router.post(
+//     "/setTeacher",
+//     courseController.setTeacher,
+// )
+
 
 
 // router.post("/specFixMeeting",
@@ -242,10 +247,7 @@ router.post(
 //     }
 // )
 
-// router.post(
-//     "/setTeacher",
-//     courseController.setTeacher,
-// )
+
 
 
 

@@ -923,11 +923,17 @@ class courseController{
                     user = await User.findOne({vk_id});
                 }
 
+
                 if(user){
                     let CA = await CourseAccount.findOne({user_id: user._id, course_id});
                     if(CA){
-                        await CourseAccount.updateOne({_id: CA._id}, {role: "TEACHER"});
-                        await Course.updateOne({_id: course._id}, {teachers: course.teachers.push(CA._id)});
+                        user.teaching.push(course._id);
+                        course.teachers.push(CA._id);
+
+                        await user.update({teaching: user.teaching});
+                        await CA.update({role: "TEACHER"});
+                        await course.update({teachers: course.teachers});
+
                         resp.json("ok").status(200);
                     } else {
                         resp.json(error("Пользователь не зарегистрирован на курсе")).status(400);
@@ -941,6 +947,7 @@ class courseController{
 
 
         } catch (e){
+            console.log(e);
             resp.json(e).status(400);
         }
     }
