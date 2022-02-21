@@ -148,22 +148,45 @@ class courseController{
 
     async getAboutCourseById(req, resp){
         try{
-            const course = await Course.findOne({_id: req.params.id});
-            let teachers;
-            teachers = await prepTeachersName(course.teachers);
-            const {_id, title, description, preview, about} = course
+            const token = req.headers.authorization;
+            let userData
+            let isMine = false;
 
+            if(token){
+                try{
+                    userData = jwt.verify(token, secret);
 
-            resp.json(
-                {
-                    id: _id,
-                    title,
-                    description,
-                    about,
-                    preview,
+                    if(userData){
+                        isMine = await CourseAccount.findOne({user_id: userData.id, course_id: req.params.id})
+                        isMine = !!isMine;
+                    }
+                } catch (e){
+
                 }
+            }
 
-            )
+            const course = await Course.findOne({_id: req.params.id});
+            if(course){
+                let teachers;
+                teachers = await prepTeachersName(course.teachers);
+                const {_id, title, description, preview, about, join} = course
+
+                resp.json(
+                    {
+                        id: _id,
+                        title,
+                        description,
+                        about,
+                        preview,
+                        teachers,
+                        isMine,
+                        join,
+                    }
+                )
+            } else {
+                resp.json(error("Курс не найден")).status(400);
+            }
+
         } catch (e){
             resp.status(400);
         }
@@ -988,7 +1011,6 @@ class courseController{
 }
 
 async function createJoinCourseMessage(course){
-    console.log("course", course);
     let message = `Вы записались на курс ${course.title}\n\n`
     if(course.meetings && course.meetings.length > 0){
         let firstMeeting = await Meeting.findOne({_id: course.meetings[0]});
