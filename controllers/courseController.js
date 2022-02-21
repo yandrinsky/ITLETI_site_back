@@ -81,7 +81,11 @@ async function prepTeachersName(teachers){
         if(CA){
             const teacher = await User.findOne({_id: CA.user_id})
             if(teacher) {
-                teachersNames.push(teacher.name + " " + teacher.surname);
+                let data = {
+                    vk_link: "https://vk.com/id" + teacher.vk_id,
+                    name: teacher.name + " " + teacher.surname,
+                }
+                teachersNames.push(data);
             }
         }
     }
@@ -186,6 +190,13 @@ class courseController{
                 }
             }
 
+            let studentsCount;
+            let needToCheck;
+            if(req.CA.role === "TEACHER"){
+                studentsCount = course.students.length;
+                needToCheck = course.needToCheck.length;
+            }
+
             resp.json(
                 {
                     id: _id,
@@ -197,6 +208,9 @@ class courseController{
                     tasks,
                     role: req.CA.role,
                     meeting: meeting ? meeting : null,
+                    teachers,
+                    studentsCount,
+                    needToCheck,
                 }
 
             )

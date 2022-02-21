@@ -3,7 +3,6 @@ import Role from "../models/Role.js";
 import bcrypt from "bcryptjs";
 import {validationResult} from "express-validator";
 import jwt from "jsonwebtoken";
-
 import {secret} from "../config.js";
 import error from "../auxilary/error.js";
 import {sendMessage, testMessage} from "../VK/bot/bot.js";
