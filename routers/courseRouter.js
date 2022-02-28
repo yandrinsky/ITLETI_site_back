@@ -43,15 +43,34 @@ router.post(
     courseController.getCourseTasks
 );
 
+router.post(
+    '/getMeetings',
+    [
+        [courseRoleMiddleware(["STUDENT", "TEACHER"])],
+        check('course_id', "Не указан id курса").notEmpty(),
+    ],
+    courseController.getCourseMeetings
+);
+
+router.post(
+    '/getMeeting',
+    [
+        [courseRoleMiddleware(["STUDENT", "TEACHER"])],
+        check('meeting_id', "Не указан id курса").notEmpty(),
+    ],
+    courseController.getMeeting
+);
 
 router.post(
     '/getTask',
     [
-        check('task_id', "Не указан id курса").notEmpty(),
         courseRoleMiddleware(["STUDENT", "TEACHER"]),
+        check('task_id', "Не указан id курса").notEmpty(),
     ],
     courseController.getTask
 );
+
+
 
 //Регистрация курса
 router.post(

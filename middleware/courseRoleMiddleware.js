@@ -12,7 +12,6 @@ export default (roles) => {
         try {
             const token = req.headers.authorization;
             if(token === null){
-                console.log("here problem 1")
                 return resp.status(403).json({message: "Пользователь не авторизован"});
             }
 

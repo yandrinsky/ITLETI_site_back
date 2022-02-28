@@ -267,6 +267,68 @@ class courseController{
         }
     }
 
+    async getCourseMeetings(req, resp){
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return resp.status(400).json({message: "Ошибка входных данных при получении ДЗ", errors});
+        }
+        try{
+            const {course_id} = req.body;
+            const course = await Course.findOne({_id: course_id});
+            let meetings = await Meeting.find({_id: course.meetings});
+            meetings = meetings.map(item => {
+                return {
+                    id: item._id,
+                    title: item.title,
+                    date: item.date,
+                }
+            })
+
+            resp.json(meetings).status(200);
+
+        } catch (e){
+            resp.json(error("Неизвестная ошибка загрузки meetings"));
+        }
+    }
+
+    async getMeeting(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка при получении задачи: не переданы необходимые параметры", errors});
+            }
+            const {meeting_id} = req.body;
+
+            const meeting = await Meeting.findOne({_id: meeting_id});
+            if(meeting){
+                let data = {
+                    attendance: meeting.attendance,
+                    date: meeting.date,
+                    title: meeting.title,
+                    content: meeting.content,
+                    grade: 0,
+                };
+                const grade = await Grade.findOne({_id: meeting.grade});
+                if(grade){
+                    let avr = (1 * grade["1"] + 2 * grade["2"] + 3 * grade["3"] + 4 * grade["4"] + 5 * grade["5"]) / grade.accounts.length;
+                    if(String(avr).includes(".")){ //Округляем до 1 знака после запятой
+                        avr = Number(String(avr).split(".")[0] + "." + String(avr).split(".")[1].slice(0, 1));
+                    }
+                    data.grade = avr;
+
+                    data.comments = await Comment.find({_id: grade.comments});
+                }
+
+                resp.json(data).status(200);
+
+            } else {
+                resp.json("Встреча не найдена").status(400);
+            }
+        } catch(e){
+            console.log("error", e)
+        }
+    }
+
     async registration(req, resp){
         try{
             const {title, description, conversation_link, about, preview} = req.body;
@@ -872,8 +934,6 @@ class courseController{
         }
     }
 
-
-
     async fixStudents(req, resp){
         await Course.syncIndexes();
         const courses = await Course.find();
@@ -884,7 +944,6 @@ class courseController{
         }
         resp.json("ok").status(200);
     }
-
 
     async checkDoubleAcc(req, resp){
         try {
@@ -922,9 +981,7 @@ class courseController{
         } catch (e){
             resp.json(error(e)).status(400)
         }
-
     }
-
 
     async deleteCourseAccount(){
         const errors = validationResult(req);
@@ -943,7 +1000,6 @@ class courseController{
     }
 
     async deleteCourse(req, resp) {
-
         try {
             const errors = validationResult(req);
 
@@ -1064,20 +1120,6 @@ class courseController{
         }
     }
 
-    // async specFixMeeting(req, resp){
-    //     try{
-    //         await Meeting.syncIndexes();
-    //         const meeting = await Meeting.findOne({_id: "616eeae75d04f5ed21a1215d"});
-    //         const grade = await Grade.create({});
-    //         meeting.grade = grade._id;
-    //         await Meeting.updateOne({_id: meeting._id}, {grade});
-    //         resp.json({message: "ok"});
-    //     } catch (e) {
-    //         console.log(e)
-    //         resp.status(400).json({message: "error"})
-    //     }
-    //
-    // }
 
 }
 //Добавить удаление комменатриев, домашек
