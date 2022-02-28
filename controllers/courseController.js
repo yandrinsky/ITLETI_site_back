@@ -841,7 +841,8 @@ class courseController{
             const {course_id} = req.body;
 
             const CA = await CourseAccount.findOne({user_id, course_id});
-            if(!CA){
+            //if(!CA)
+            if(1){
                 const CA = await CourseAccount.create({course_id, user_id})
 
                 const course = await Course.findOne({_id: course_id});
@@ -868,6 +869,76 @@ class courseController{
 
         }catch (e){
             resp.json({errors: e}).status(400);
+        }
+    }
+
+
+
+    async fixStudents(req, resp){
+        await Course.syncIndexes();
+        const courses = await Course.find();
+        for (let i = 0; i < courses.length; i++) {
+            let course = courses[i];
+            course.students = course.students.map(item => item instanceof Array ? item[0] : item);
+            await course.update({students: course.students});
+        }
+        resp.json("ok").status(200);
+    }
+
+
+    async checkDoubleAcc(req, resp){
+        try {
+            let duplicate = 0;
+            let duplicateId = [];
+            let users = await User.find();
+
+            for (let i = 0; i < users.length; i++) {
+                let user = users[i];
+                let learning = user.learning;
+                //console.log("learning", learning);
+                let CAS = await CourseAccount.find({_id: learning});
+                let was = [];
+                let userDuplicate = 0;
+                for (let j = 0; j < CAS.length; j++) {
+                    let CA = CAS[j];
+                    //console.log("CA.course_id", CA.course_id);
+                    if(!was.includes(CA.course_id)){
+                        was.push(CA.course_id);
+                    } else {
+                        duplicate += 1;
+                        userDuplicate += 1;
+                        duplicateId.push(CA._id);
+                    }
+                }
+            }
+
+            for (let i = 0; i < duplicateId.length; i++) {
+                if(!await deleteCourseAccount(duplicateId[i])){
+                    resp.json(error("Ошибка при удалении CA: " + duplicateId[i])).status(400);
+                    return;
+                }
+            }
+            resp.json({duplicate, duplicateId}).status(200);
+        } catch (e){
+            resp.json(error(e)).status(400)
+        }
+
+    }
+
+
+    async deleteCourseAccount(){
+        const errors = validationResult(req);
+        try{
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка отметки присутсвия", errors});
+            }
+            const {CA_id} = req.body;
+            let res = await deleteCourseAccount(CA_id)
+            reps.json(res).status(200);
+
+        } catch (e){
+            console.log("deleteCourseAccount error", e);
+            resp.status(400).json({message: "Неизвестная ошибка при удалении аккаунта", errors: e})
         }
     }
 
@@ -1008,6 +1079,63 @@ class courseController{
     //
     // }
 
+}
+//Добавить удаление комменатриев, домашек
+async function deleteCourseAccount(CA_id){
+    let CA = await CourseAccount.findOne({_id: CA_id});
+    if(CA){
+        let user = await User.findOne({_id: CA.user_id});
+        let course = await Course.findOne({_id: CA.course_id});
+        let homeworks = await Homework.find({course_account_id: CA_id});
+        let comments = await Comment.find({author_id: CA_id});
+
+        for (let i = 0; i < comments.length; i++) { //Удаляем комменатарии
+            await comments[i].delete();
+        }
+
+        if(course){
+            let courseStudentsCaIndex = course.students.indexOf(CA_id);
+            let courseTeachersCaIndex = course.teachers.indexOf(CA_id);
+
+            if(courseStudentsCaIndex !== -1) { //Удялем у курса из students CA
+                course.students.splice(courseStudentsCaIndex, 1);
+                await course.update({students: course.students});
+            }
+            if(courseTeachersCaIndex !== -1) { //Удялем у курса из teachers CA
+                course.teachers.splice(courseTeachersCaIndex, 1);
+                await course.update({teachers: course.teachers});
+            }
+
+            for (let i = 0; i < homeworks.length; i++) { //Удаляем домашки
+                let hmwIndex = course.needToCheck.indexOf(homeworks[i]._id);
+                if(hmwIndex !== -1){ //Удаляем у курса в needToCheck домашку
+                    course.needToCheck.splice(hmwIndex, 1);
+                }
+                await homeworks[i].delete(); //удаляем домашку
+            }
+
+            await course.update({needToCheck: course.needToCheck});
+        }
+
+        if(user){
+            let userLearnCaIndex = user.learning.indexOf(CA_id);
+            let userTeachCaIndex = user.teaching.indexOf(CA_id);
+
+            if(userLearnCaIndex !== -1){//Удаляем у юзера из learning CA
+                user.learning.splice(userLearnCaIndex, 1);
+                await user.update({learning: user.learning});
+            }
+            if(userTeachCaIndex !== -1){//Удаляем у юзера из learning CA
+                user.teaching.splice(userTeachCaIndex, 1);
+                await user.update({teaching: user.teaching});
+            }
+
+        }
+        await CA.delete();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 async function createJoinCourseMessage(course){

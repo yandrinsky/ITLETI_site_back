@@ -10,7 +10,7 @@ const Course = new mongoose.Schema({
     status: {type: String, default: "active"}, // active / passive / archived
     authors: [{type: String, ref: 'CourseAccount'}],
     teachers: [{type: String, ref: 'CourseAccount'}],
-    students: [{type: Array, ref: 'CourseAccount'}],
+    students: [{type: String, ref: 'CourseAccount'}], //Изменение с type: Array -> type: String
     articles: [{type: String, ref: 'Article'}],
     notifications: [{type: String, ref: 'Notification'}],
     tasks: [{type: String, ref: 'Task'}],

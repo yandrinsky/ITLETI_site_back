@@ -94,17 +94,12 @@ class authController {
             const {vk_id, expire, mid, sid, cookie, secret} = req.body;
             const secretKey = vk_secretKey;
             const sig = req.body.sig ? req.body.sig : cookie.split("&").splice(-1)[0].split("=")[1];
+
+
             if(md5((cookie ?
                 cookie.split("&").slice(0, -1).join("") + secretKey :
                 `expire=${expire}mid=${mid}secret=${secret}sid=${sid}`+ secretKey)) !== sig)
             {
-                console.log("expire", expire);
-                console.log("mid", mid);
-                console.log("secret", secret);
-                console.log("sid", sid);
-
-                console.log("sig", sig);
-                console.log("md5", md5((`expire=${expire}mid=${mid}secret=${secret}sid=${sid}` + secretKey)));
 
                 resp.status(400).json({message: "Login error: не прошла проверка подписи"});
 

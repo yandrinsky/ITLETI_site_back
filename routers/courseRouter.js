@@ -196,15 +196,19 @@ router.post(
 )
 
 // router.post(
+//     '/checkDoubleAcc',
+//     courseController.checkDoubleAcc,
+// )
+// router.post(
 //     "/setTeacher",
 //     courseController.setTeacher,
 // )
-
-
-
-// router.post("/specFixMeeting",
-//     courseController.specFixMeeting
+//
+// router.post(
+//     '/fixStudents',
+//     courseController.fixStudents,
 // )
+
 
 
 

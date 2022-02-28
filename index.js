@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import authRouter from "./routers/authRouter.js";
 import courseRouter from "./routers/courseRouter.js";
 import cors from "cors";
-import {sendMessage, testMessage} from "./VK/bot/bot.js";
+import statisticsRouter from "./routers/statisticsRouter.js";
 
 
 const app = express();
@@ -21,8 +21,9 @@ app.use(cors()); //позволяет делать запросы к нашем�
 app.use(express.static("./assets/img")); //чтобы express отдавал статические файлы по запросу ("static") - название папки
 //то есть в вёрстке можно будет писать img src="сервер/название файла".
 
-app.use('/auth', authRouter)
-app.use('/courses', courseRouter)
+app.use('/auth', authRouter);
+app.use('/courses', courseRouter);
+app.use('/statistics', statisticsRouter);
 
 
 const start = async () => {
