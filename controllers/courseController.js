@@ -310,7 +310,7 @@ class courseController{
                 };
                 const grade = await Grade.findOne({_id: meeting.grade});
                 if(grade){
-                    let avr = (1 * grade["1"] + 2 * grade["2"] + 3 * grade["3"] + 4 * grade["4"] + 5 * grade["5"]) / grade.accounts.length;
+                    let avr = (1 * grade["1"] + 2 * grade["2"] + 3 * grade["3"] + 4 * grade["4"] + 5 * grade["5"]) / (grade["1"] + grade["2"] + grade["3"] + grade["4"] + grade["5"]);
                     if(String(avr).includes(".")){ //Округляем до 1 знака после запятой
                         avr = Number(String(avr).split(".")[0] + "." + String(avr).split(".")[1].slice(0, 1));
                     }
