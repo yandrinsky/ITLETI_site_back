@@ -1187,7 +1187,7 @@ async function createJoinCourseMessage(course){
     if(course.meetings && course.meetings.length > 0){
         let firstMeeting = await Meeting.findOne({_id: course.meetings[0]});
         let date = new Date(firstMeeting.date);
-        let firstMeetingDate = String(date.getDate()).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
+        let firstMeetingDate = String(date.getDate() + 1n).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
 
 
         message += `Курс уже начался. Занятий прошло: ${course.meetings.length}\n`
@@ -1195,7 +1195,7 @@ async function createJoinCourseMessage(course){
         if(course.meetings.length > 1){
             let lastMeeting = await Meeting.findOne({_id: course.meetings[course.meetings.length -1]});
             let date = new Date(lastMeeting.date);
-            let lastMeetingDate = String(date.getDate()).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
+            let lastMeetingDate = String(date.getDate() + 1).padStart(2, "0") + "." + String(date.getMonth() + 1).padStart(2, "0") + "." + String(date.getFullYear());
             message += `Дата последнего занятия (${lastMeeting.title}): ${lastMeetingDate}\n`
         }
     } else {
