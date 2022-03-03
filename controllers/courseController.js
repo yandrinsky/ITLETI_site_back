@@ -1,7 +1,7 @@
 import Course from "../models/Course.js";
 import User from "../models/User.js";
 import Task from "../models/Task.js";
-import Notification from "../models/Notification.js";
+import Notification from "../notifications/Notification.js";
 import Article from "../models/Article.js";
 import Meeting from "../models/Meeting.js";
 import Homework from "../models/Homework.js";
@@ -380,6 +380,8 @@ class courseController{
                     //Добовляем id нового task в массив task'ов
                     course.tasks.push(task._id);
 
+                    //Делаем уведомление
+                    await Notification.newTask(course_id, task._id);
                     //Обновляем курс
                     await Course.updateOne({_id: course_id}, {tasks: course.tasks});
                     resp.json("ok").status(200);

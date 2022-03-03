@@ -41,11 +41,12 @@ export async function testMessage(user_id){
 export async function sendMessage(message, user_id){
     let result;
     let status;
+    let sep = "---------------------------------------------";
     try {
         result = await api.messages.send({
             peer_id: user_id,
             random_id: getRandomId(),
-            message: message,
+            message: sep + "\n\n" + message + "\n" + sep,
         })
         status = true;
     } catch (e) {
