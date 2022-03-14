@@ -28,7 +28,14 @@ export default (roles) => {
                 return resp.status(404).json({message: "Задача не найдена"});
             })
 
+            //Добавляем инфу по юзеру
+            if(!req.hasOwnProperty("user")){
+                req.user = userData;
+            }
+
+
             if(!taskError){
+
                 const CA = await CourseAccount.findOne({user_id: userData.id, course_id: task?.course_id || req.params.id || req.body.course_id});
 
                 if(!CA){
@@ -44,6 +51,10 @@ export default (roles) => {
                 if(roles.includes(CA.role)){
                     hasRole = true;
                 }
+                if(req.user.roles.includes("ADMIN")){
+                    hasRole = true;
+                    CA.role = "TEACHER";
+                }
 
                 if(!hasRole){
                     return resp.status(403).json({message: "Недостаточно прав"});
@@ -53,7 +64,6 @@ export default (roles) => {
             }
 
         }catch (e){
-            console.log("here problem 2")
             return resp.status(403).json({message: "Что-то пошло не так"});
         }
     }

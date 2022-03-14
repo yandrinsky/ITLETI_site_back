@@ -26,7 +26,7 @@ router.get(
 //Получить информацию по конкретному курсу
 router.get(
     '/:id',
-    [courseRoleMiddleware(["STUDENT", "TEACHER"])],
+    courseRoleMiddleware(["STUDENT", "TEACHER"]),
     courseController.getCourseById
 );
 
@@ -137,7 +137,7 @@ router.post(
 
 router.post(
     '/getHomework',
-    [courseRoleMiddleware(["TEACHER"])],
+    courseRoleMiddleware(["TEACHER"]),
     courseController.getHomework,
 )
 
@@ -183,17 +183,17 @@ router.post(
 
 
 
-router.post(
-    '/registrationFix',
-    [roleMiddleware(["ADMIN"])],
-    async (req, resp)=> {
-        // Course.syncIndexes();
-        // User.syncIndexes();
-        Grade.syncIndexes();
-
-        resp.json("fixed");
-    }
-);
+// router.post(
+//     '/registrationFix',
+//     [roleMiddleware(["ADMIN"])],
+//     async (req, resp)=> {
+//         // Course.syncIndexes();
+//         // User.syncIndexes();
+//         Grade.syncIndexes();
+//
+//         resp.json("fixed");
+//     }
+// );
 
 router.post(
     '/shouldGradeMeeting',
@@ -213,6 +213,11 @@ router.post(
     ],
     courseController.gradeMeeting,
 )
+
+// router.post(
+//     '/coursesStats',
+//     courseController.coursesStats,
+// )
 
 // router.post(
 //     '/checkDoubleAcc',

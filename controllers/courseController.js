@@ -99,11 +99,11 @@ class courseController{
     async get(req, resp){
         try{
             const token = req.headers.authorization;
-            let userData
             //console.log("token is", !!token, token, "userData is", !!userData)
+            let uData;
             if(token){
                 try{
-                    userData = jwt.verify(token, secret);
+                    uData = jwt.verify(token, secret);
                 } catch (e){
 
                 }
@@ -120,14 +120,14 @@ class courseController{
 
                 let isMine = false;
 
-                if(userData){
-                    isMine = (await CourseAccount.findOne({user_id: userData.id, course_id: doc._id}))
+                if(uData){
+                    isMine = (await CourseAccount.findOne({user_id: uData.id, course_id: doc._id}))
                     isMine = !!isMine;
                 }
 
                 const {title, description, preview, status, join, _id} = doc;
 
-                data.push( {
+                data.push({
                     teachers,
                     title,
                     preview,
@@ -1114,6 +1114,62 @@ class courseController{
             } else {
                 resp.json(error("Курс не найден")).status(400);
             }
+
+
+        } catch (e){
+            console.log(e);
+            resp.json(e).status(400);
+        }
+    }
+
+    async coursesStats(req, resp){
+        try{
+            const {course_id, vk_id, user_id} = req.body;
+            let courses = await Course.find({});
+            let data = {};
+
+            for (let i = 0; i < courses.length; i++) {
+                let course = courses[i];
+                //Счётчик домах;
+                let hmwCount = 0;
+                for (let j = 0; j < course.tasks.length; j++) {
+                    hmwCount += await Homework.find({task_id: course.tasks[j]}).count();
+                }
+
+                let courseData = {
+                    title: course.title,
+                    meetings: [],
+                    meetingsCount: 0,
+                    tasks: course.tasks.length,
+                    homeworks: hmwCount,
+                    students: course.students.length,
+
+                }
+
+                //Подробно по занятиям
+                let meetings = await Meeting.find({_id: course.meetings});
+                for (let j = 0; j < meetings.length; j++) {
+                    let meeting = meetings[j];
+                    let grade = await Grade.findOne({_id: meeting.grade});
+                    let avr = null;
+                    if(grade){
+                        avr = (1 * grade["1"] + 2 * grade["2"] + 3 * grade["3"] + 4 * grade["4"] + 5 * grade["5"]) / (grade["1"] + grade["2"] + grade["3"] + grade["4"] + grade["5"]);
+                    }
+
+                    let meetingData = {
+                        title: meeting.title,
+                        date: meeting.date,
+                        attendance: meeting.attendance,
+                        avr,
+                    }
+                    courseData.meetings.push(meetingData);
+
+                }
+                courseData.meetingsCount = meetings.length;
+                data[courseData.title] = courseData;
+
+            }
+            resp.json(data).status(200);
 
 
         } catch (e){
