@@ -214,10 +214,10 @@ router.post(
     courseController.gradeMeeting,
 )
 
-// router.post(
-//     '/coursesStats',
-//     courseController.coursesStats,
-// )
+router.post(
+    '/coursesStats',
+    courseController.coursesStats,
+)
 
 // router.post(
 //     '/checkDoubleAcc',

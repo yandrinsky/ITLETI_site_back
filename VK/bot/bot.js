@@ -46,7 +46,7 @@ export async function sendMessage(message, user_id){
         result = await api.messages.send({
             peer_id: user_id,
             random_id: getRandomId(),
-            message: sep + "\n\n" + message + "\n" + sep,
+            message: message + "\n",
         })
         status = true;
     } catch (e) {

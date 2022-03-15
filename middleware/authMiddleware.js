@@ -11,11 +11,11 @@ export default (req, resp, next) => {
         const token = req.headers.authorization.split(" ")[1];
 
         if(!token){
-            return resp.status(403).json({message: "Пользователь не авторизован"});
+            return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
         }
         req.user = jwt.verify(token, secret);
         next();
     }catch (e){
-        return resp.status(403).json({message: "Пользователь не авторизован"});
+        return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
     }
 }

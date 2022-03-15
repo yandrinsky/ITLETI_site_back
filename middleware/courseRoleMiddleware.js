@@ -12,14 +12,14 @@ export default (roles) => {
         try {
             const token = req.headers.authorization;
             if(token === null){
-                return resp.status(403).json({message: "Пользователь не авторизован"});
+                return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
             }
 
             let userData;
             try {
                 userData = jwt.verify(token, secret);
             } catch (e) {
-                return resp.status(403).json({message: "Пользователь не авторизован"});
+                return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
             }
 
             let taskError = false;

@@ -623,7 +623,7 @@ class courseController{
             } else {
                 await Homework.updateOne({_id: homework_id}, {passed: status === "PASSED", checked: true});
             }
-
+            Notification.checkHomework(homework_id, status === "PASSED")
             resp.status(200).json({message: "Ok"})
         } catch (e) {
             console.log("errors", e);
@@ -724,7 +724,7 @@ class courseController{
 
                 course.meetings.push(meeting._id);
                 await Course.updateOne({_id: course_id}, {meetings: course.meetings})
-
+                Notification.startMeeting(course_id, meeting._id);
                 resp.json({
                     meeting: {
                         title: meeting.title,

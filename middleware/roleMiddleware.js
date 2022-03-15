@@ -10,7 +10,7 @@ export default (roles) => {
         try {
             const token = req.headers.authorization;
             if(!token){
-                return resp.status(403).json({message: "Пользователь не авторизован"});
+                return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
             }
 
             let userData = jwt.verify(token, secret);
@@ -28,7 +28,7 @@ export default (roles) => {
             }
             next();
         }catch (e){
-            return resp.status(403).json({message: "Пользователь не авторизован"});
+            return resp.status(403).json({message: "Пользователь не авторизован", code: 1});
         }
     }
 }
