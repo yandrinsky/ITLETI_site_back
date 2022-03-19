@@ -1,6 +1,7 @@
-function error(...errors){
+function error(error, code){
     return {
-        message: [...errors]
+        message: [error],
+        code,
     }
 }
 

@@ -45,14 +45,14 @@ function userData(req, resp){
     const token = req.headers.authorization;
     let userData;
     if(!token){
-        return resp.status(403).json({message: "Пользователь не авторизован"});
+        return resp.status(403).json(error("Пользователь не авторизован", 1));
     }
 
     try{
         userData = jwt.verify(token, secret);
         return userData;
     } catch (e){
-        resp.status(403).json(error("Ошибка авторизации"))
+        return resp.status(403).json(error("Ошибка авторизации", 1));
         return null
     }
 }
@@ -99,7 +99,6 @@ class courseController{
     async get(req, resp){
         try{
             const token = req.headers.authorization;
-            //console.log("token is", !!token, token, "userData is", !!userData)
             let uData;
             if(token){
                 try{
@@ -238,18 +237,20 @@ class courseController{
 
             )
         } catch (e){
-            resp.status(400);
+            resp.json("Неизвестная ошибка получения курса", 0).status(400);
         }
     }
 
     async getCourseTasks(req, resp){
         const id = req.body.course_id;
         try{
-            const course = await Course.findOne({_id: id});
+            //const course = await Course.findOne({_id: id});
             const formedTasks = [];
             const closedTasks = [];
-            for(let i = 0; i < course.tasks.length; i++){
-                let task = await Task.findOne({_id: course.tasks[i]})
+            const tasks = await Task.find({course_id: id});
+            for(let i = 0; i < tasks.length; i++){
+                //let task = await Task.findOne({_id: course.tasks[i]})
+                let task = await Task.findOne({_id: tasks[i]})
                 if(task.status === "CLOSE") {
                     closedTasks.push(task)
                 } else {
@@ -263,7 +264,7 @@ class courseController{
             )
         } catch (e){
             console.log("getCourseTasks error", e);
-            resp.status(400);
+            resp.json("Неизвестная ошибка получения задач курса", 0).status(400);
         }
     }
 
@@ -392,6 +393,7 @@ class courseController{
 
         } catch(e){
             console.log("error", e)
+            resp.json(error("Неизвестная ошибка создания новой задачи", 0)).status(400);
         }
     }
 
