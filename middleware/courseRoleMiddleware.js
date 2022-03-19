@@ -23,22 +23,29 @@ export default (roles) => {
             }
 
             let taskError = false;
-            const task = await Task.findOne({_id: req.body.task_id}).catch(e => {
-                taskError = true;
-                return resp.status(404).json({message: "Задача не найдена"});
-            })
+            const task = await Task.findOne({_id: req.body.task_id})
+                .catch(e => {
+                    taskError = true;
+                    //return resp.status(404).json({message: "Задача не найдена"});
+                })
+
+
 
             //Добавляем инфу по юзеру
             if(!req.hasOwnProperty("user")){
                 req.user = userData;
             }
 
-
+            //Надо фиксить чо тут вообще происходит. С чего вдруг определение роли курса идёт по задаче...
             if(!taskError){
 
                 const CA = await CourseAccount.findOne({user_id: userData.id, course_id: task?.course_id || req.params.id || req.body.course_id});
 
                 if(!CA){
+                    if(req.body.task_id && !task){
+                        return resp.status(404).json({message: "Задача не найдена"});
+                    }
+
                     return resp.status(403).json({message: "Вы не участник этого курса"});
                 }
                 if(CA.status === "EXPELLED"){

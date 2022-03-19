@@ -4,7 +4,6 @@ import error from "../auxilary/error.js";
 
 export default (req, resp, next) => {
     if(req.method === "OPTIONS"){
-        console.log("options?");
         next();
     }
 
