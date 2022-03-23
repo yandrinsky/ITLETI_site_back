@@ -446,11 +446,12 @@ class courseController{
 
 
                     //let type = getHomeworkType(homework);
-                    let status = getHomeworkType(homework);
-
-                    if(!status){
-                        status = task.status
-                    }
+                    //let status = getHomeworkType(homework);
+                    let status = task.status;
+                    let homeworkStatus = getHomeworkType(homework);
+                    // if(!status){
+                    //     status = task.status
+                    // }
 
                     if(homework && homework.comments.length !== 0){
                         for (let i = 0; i < homework.comments.length; i++) {
@@ -471,7 +472,7 @@ class courseController{
                     resp.json(
                         {id: _id, title, content,
                              status, homework: homework && homework.content ? homework.content : "",
-                             ableToSend, type, comments, contentType, lang, resource, frameOption, frame
+                             ableToSend, type, comments, contentType, lang, resource, frameOption, frame, homeworkStatus
                         }).status(200)
                 } else {
                     resp.json(error("Вы не принадлежите к группе курса")).status(400);
@@ -553,7 +554,6 @@ class courseController{
             console.log("error", e)
         }
     }
-
 
     async getHomework(req, resp){
         try{
@@ -672,7 +672,7 @@ class courseController{
                 });
 
             } else {
-                homework = await Homework.create({course_account_id: CA._id, task_id, content, checked: false, tries: 1, comments: formedComment ? [formedComment._id] : []})
+                homework = await Homework.create({course_account_id: CA._id, task_id, date: new Date().getTime(), content, checked: false, tries: 1, comments: formedComment ? [formedComment._id] : []})
             }
 
             const course = await Course.findOne({_id: task.course_id});
