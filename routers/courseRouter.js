@@ -219,6 +219,15 @@ router.post(
     courseController.coursesStats,
 )
 
+router.post(
+    '/courseStats',
+    [
+        courseRoleMiddleware(["TEACHER"]),
+        check("course_id", "").notEmpty()
+    ],
+    courseController.courseStats,
+)
+
 // router.post(
 //     '/checkDoubleAcc',
 //     courseController.checkDoubleAcc,

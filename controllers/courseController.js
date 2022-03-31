@@ -449,9 +449,7 @@ class courseController{
                     //let status = getHomeworkType(homework);
                     let status = task.status;
                     let homeworkStatus = getHomeworkType(homework);
-                    // if(!status){
-                    //     status = task.status
-                    // }
+
 
                     if(homework && homework.comments.length !== 0){
                         for (let i = 0; i < homework.comments.length; i++) {
@@ -1173,6 +1171,102 @@ class courseController{
             }
             resp.json(data).status(200);
 
+
+        } catch (e){
+            console.log(e);
+            resp.json(e).status(400);
+        }
+    }
+
+    async courseStats(req, resp){
+        try{
+            const {course_id, vk_id, user_id} = req.body;
+            let course = await Course.findOne({_id: course_id});
+
+
+            let courseData = {
+                title: course.title,
+                meetings: [],
+                tasks: [],
+                totalMeetings: 0,
+                totalAvrGrade: undefined,
+                totalTasks: undefined,
+                totalHomeworks: undefined,
+                students: course.students.length,
+            }
+
+            //Счётчик домах;
+            let hmwCount = 0;
+            let tasks = await Task.find({course_id});
+            courseData.totalTasks = tasks.length;
+            for (let j = 0; j < tasks.length; j++) {
+                let curTask = tasks[j];
+                let curHmw = await Homework.find({task_id: curTask._id});
+                let passedCount = 0;
+                let failedCount = 0;
+                let uncheckedCount = 0;
+                let firstTimePassed = 0;
+                curHmw.forEach(item => {
+                    if(item.checked === true && item.passed === true){
+                        passedCount += 1;
+                        if(item.tries === 1){
+                            firstTimePassed += 1;
+                        }
+                    } else if(item.checked === true && item.passed === false){
+                        failedCount += 1;
+                    } else {
+                        uncheckedCount += 1;
+                    }
+                })
+
+                hmwCount += curHmw.length;
+                courseData.tasks.push({
+                    title: curTask.title,
+                    total: curHmw.length,
+                    passedCount,
+                    failedCount,
+                    uncheckedCount,
+                    firstTimePassed,
+                })
+            }
+
+            courseData.totalHomeworks = hmwCount;
+
+            //Подробно по занятиям
+            let meetings = await Meeting.find({_id: course.meetings});
+            let avrs = []
+            for (let j = 0; j < meetings.length; j++) {
+                let meeting = meetings[j];
+                let grade = await Grade.findOne({_id: meeting.grade});
+                let avr = null;
+                let marks = null;
+                if(grade){
+                    avr = (1 * grade["1"] + 2 * grade["2"] + 3 * grade["3"] + 4 * grade["4"] + 5 * grade["5"]) / (grade["1"] + grade["2"] + grade["3"] + grade["4"] + grade["5"]);
+                    if(avr){
+                        avrs.push(avr);
+                    }
+                    marks = {
+                        "5": grade["5"],
+                        "4": grade["4"],
+                        "3": grade["3"],
+                        "2": grade["2"],
+                        "1": grade["1"],
+                    }
+                }
+
+                let meetingData = {
+                    title: meeting.title,
+                    date: meeting.date,
+                    attendance: meeting.attendance,
+                    marks,
+                    avr,
+                }
+                courseData.meetings.push(meetingData);
+
+            }
+            courseData.totalAvrGrade = avrs.reduce((a, b) => a + b) / avrs.length;
+            courseData.totalMeetings = meetings.length;
+            resp.json({stats: courseData}).status(200);
 
         } catch (e){
             console.log(e);
