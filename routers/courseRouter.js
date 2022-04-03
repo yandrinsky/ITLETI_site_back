@@ -55,10 +55,19 @@ router.post(
 router.post(
     '/getMeeting',
     [
-        [courseRoleMiddleware(["STUDENT", "TEACHER"])],
+        // [courseRoleMiddleware(["STUDENT", "TEACHER"])],
         check('meeting_id', "Не указан id курса").notEmpty(),
     ],
     courseController.getMeeting
+);
+
+router.post(
+    '/getMeetingAttendance',
+    [
+        // [courseRoleMiddleware(["TEACHER"])],
+        check('meeting_id', "Не указан id курса").notEmpty(),
+    ],
+    courseController.getMeetingAttendance
 );
 
 router.post(

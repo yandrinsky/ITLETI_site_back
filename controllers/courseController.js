@@ -316,7 +316,15 @@ class courseController{
                         avr = Number(String(avr).split(".")[0] + "." + String(avr).split(".")[1].slice(0, 1));
                     }
                     data.grade = avr;
-
+                    if(avr){
+                        data.marks = {
+                            "5": grade["5"],
+                            "4": grade["4"],
+                            "3": grade["3"],
+                            "2": grade["2"],
+                            "1": grade["1"],
+                        }
+                    }
                     data.comments = await Comment.find({_id: grade.comments});
                 }
 
@@ -329,6 +337,35 @@ class courseController{
             console.log("error", e)
         }
     }
+
+    async getMeetingAttendance(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка запросе посещаемости курса - не переданы необходимы параметры", errors});
+            }
+            const {meeting_id} = req.body;
+
+            const meeting = await Meeting.findOne({_id: meeting_id});
+
+            if(meeting){
+                let CAS = await CourseAccount.find({_id: meeting.students});
+                let users = await User.find({_id: CAS.map(item => item.user_id)});
+                let data = users.map(user => {
+                    const {name, surname, group, vk_id} = user;
+                    return {name, surname, group, vk_id}
+                })
+                resp.json(data).status(200);
+
+            } else {
+                resp.json("Занятие не найдено").status(400);
+            }
+        } catch(e){
+            console.log("error", e)
+        }
+    }
+
+
 
     async registration(req, resp){
         try{
@@ -1260,6 +1297,7 @@ class courseController{
                     attendance: meeting.attendance,
                     marks,
                     avr,
+                    id: meeting._id,
                 }
                 courseData.meetings.push(meetingData);
 
