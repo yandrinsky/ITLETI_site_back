@@ -244,24 +244,8 @@ class courseController{
     async getCourseTasks(req, resp){
         const id = req.body.course_id;
         try{
-            //const course = await Course.findOne({_id: id});
-            const formedTasks = [];
-            const closedTasks = [];
             const tasks = await Task.find({course_id: id});
-            for(let i = 0; i < tasks.length; i++){
-                //let task = await Task.findOne({_id: course.tasks[i]})
-                let task = await Task.findOne({_id: tasks[i]})
-                if(task.status === "CLOSE") {
-                    closedTasks.push(task)
-                } else {
-                    formedTasks.push(task);
-                }
-            }
-            resp.json(
-                {
-                    tasks: [...formedTasks, ...closedTasks]
-                }
-            )
+            resp.json({tasks})
         } catch (e){
             console.log("getCourseTasks error", e);
             resp.json("Неизвестная ошибка получения задач курса", 0).status(400);
@@ -893,6 +877,7 @@ class courseController{
             resp.status(400).json({message: "Неизвестная ошибка оценки занятия", errors: e})
         }
     }
+
 
     async shouldGradeMeeting(req, resp){
         const errors = validationResult(req);
