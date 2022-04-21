@@ -1,22 +1,23 @@
-import Course from "../models/Course.js";
-import User from "../models/User.js";
-import Task from "../models/Task.js";
-import Notification from "../notifications/Notification.js";
-import Article from "../models/Article.js";
-import Meeting from "../models/Meeting.js";
-import Homework from "../models/Homework.js";
-import CourseAccount from "../models/CourseAccount.js";
-import Comment from "../models/Comment.js";
+import Course from "../../models/Course.js";
+import User from "../../models/User.js";
+import Task from "../../models/Task.js";
+import Notification from "../../notifications/Notification.js";
+import Article from "../../models/Article.js";
+import Meeting from "../../models/Meeting.js";
+import Homework from "../../models/Homework.js";
+import CourseAccount from "../../models/CourseAccount.js";
+import Comment from "../../models/Comment.js";
 import jwt from "jsonwebtoken";
-import {secret} from "../config.js";
-import error from "../auxilary/error.js";
+import {secret} from "../../config.js";
+import error from "../../auxilary/error.js";
 
 import {validationResult} from "express-validator";
 
 import fs from "fs"
 import path from "path"
-import Grade from "../models/Grade.js";
-import {sendMessage} from "../VK/bot/bot.js";
+import Grade from "../../models/Grade.js";
+import {sendMessage} from "../../VK/bot/bot.js";
+import {getMeeting} from "./funtions/meeting/getMeeting.js";
 
 
 
@@ -198,18 +199,25 @@ class courseController{
             teachers = await prepTeachersName(course.teachers);
             const {_id, title, description, preview, articles, notifications, tasks, meetings, about} = course
 
-            let meeting = await Meeting.findOne({_id: meetings[meetings.length - 1]});
+            //let meeting = await Meeting.findOne({_id: meetings[meetings.length - 1]});
+
+            let meeting = await getMeeting({_id: meetings[meetings.length - 1], CA: req.CA});
             if(meetings.length > 0 && meeting){
                 meeting = meeting.active ? meeting : null;
-                if(meeting){
-                    meeting = {
-                        title: meeting.title,
-                        content: meeting.content,
-                        signup: meeting.students.includes(req.CA._id),
-                        active: meeting.active,
-                        date: meeting.date,
-                    }
-                }
+                // if(meeting){
+                //     meeting = {
+                //         title: meeting.title,
+                //         content: meeting.content,
+                //         signup: meeting.students.includes(req.CA._id),
+                //         active: meeting.active,
+                //         date: meeting.date,
+                //         id: meeting._id,
+                //         link: meeting.link,
+                //         CQ: meeting.CQ,
+                //         CQ_title: meeting.CQ_title,
+                //         CQ_answer: req.CA.role === "TEACHER" ? meeting.CQ_answer : null,
+                //     }
+                // }
             }
 
             let studentsCount;
@@ -728,9 +736,7 @@ class courseController{
             if(!errors.isEmpty()){
                 return resp.status(400).json({message: "Ошибка установки meeting", errors});
             }
-            const {course_id, content, title} = req.body;
-
-
+            const {course_id, content, title, CQ, CQ_title, CQ_answer, link} = req.body;
             const course = await Course.findOne({_id: course_id});
             if(!course.meetings){
                 course.meetings = [];
@@ -741,7 +747,7 @@ class courseController{
 
             if(lastMeeting && lastMeeting.active === false || !lastMeeting){
                 const grade = await Grade.create({});
-                const meeting = await Meeting.create({title, content, grade: grade._id, date: new Date().getTime()});
+                const meeting = await Meeting.create({title, content, grade: grade._id, date: new Date().getTime(), CQ, CQ_title, CQ_answer: CQ_answer.toLowerCase(), link});
 
                 course.meetings.push(meeting._id);
                 await Course.updateOne({_id: course_id}, {meetings: course.meetings})
@@ -753,6 +759,10 @@ class courseController{
                         signup: meeting.students.includes(req.CA._id),
                         active: meeting.active,
                         date: meeting.date,
+                        CQ: meeting.CQ,
+                        link: meeting.link,
+                        CQ_title: meeting.CQ_title,
+                        CQ_answer: meeting.CQ_answer,
                     }
                 }).status(200);
             } else {
@@ -797,13 +807,17 @@ class courseController{
             if(!errors.isEmpty()){
                 return resp.status(400).json({message: "Ошибка отметки присутсвия", errors});
             }
-            const {course_id} = req.body;
+            const {course_id, answer} = req.body;
 
             const course = await Course.findOne({_id: course_id});
             const meeting = await Meeting.findOne({_id: course.meetings[course.meetings.length - 1]});
 
             if(meeting.active){
                 if(!meeting.students.includes(req.CA._id)){
+                    if(meeting.CQ && meeting.CQ_answer !== answer.toLowerCase()){
+                        return resp.status(400).json(error("Ответ неверный", 41))
+                    }
+
                     meeting.students.push(req.CA._id);
                     meeting.attendance += 1;
                     await Meeting.updateOne({_id: meeting._id}, {students: meeting.students, attendance: meeting.attendance});
@@ -1296,8 +1310,6 @@ class courseController{
             resp.json(e).status(400);
         }
     }
-
-
 }
 //Добавить удаление комменатриев, домашек
 async function deleteCourseAccount(CA_id){

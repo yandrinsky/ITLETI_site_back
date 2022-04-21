@@ -25,7 +25,7 @@ app.use(express.static("./assets/img")); //чтобы express отдавал с�
 app.use('/auth', authRouter);
 app.use('/courses', courseRouter);
 app.use('/statistics', statisticsRouter);
-//app.use('/system', systemRouter);
+app.use('/system', systemRouter);
 
 
 const start = async () => {

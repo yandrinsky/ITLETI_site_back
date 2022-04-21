@@ -1,5 +1,5 @@
 import Router from "express";
-import courseController from "../controllers/courseController.js";
+import courseController from "../controllers/courseController/courseController.js";
 import {check} from "express-validator";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";

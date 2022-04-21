@@ -1,0 +1,9 @@
+1-10 - auth errors
+11-30 - course errors
+41-50 - meeting errors
+51-70 - task error
+71-80 - hmw errors
+
+1 - not auth
+
+41 - wrong answer (trying to sign up for a meeting)
