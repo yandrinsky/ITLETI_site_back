@@ -12,41 +12,19 @@ import {vk_secretKey} from "../VK/params.js";
 
 
 
-const generateAccessToken = (id, roles, vk_id) => {
+const generateAccessToken = (id, roles, vk_id, username) => {
     const payload = {
         id,
         roles,
-        vk_id
+        vk_id,
+        username
     }
     return jwt.sign(payload, secret, {expiresIn: "2h"});
 }
 
 
 class authController {
-    // async registration(req, resp){
-    //     try{
-    //         const errors = validationResult(req);
-    //         if(!errors.isEmpty()){
-    //             return resp.status(400).json({message: "Ошибка при регистрации", errors});
-    //         }
-    //
-    //         const {username, password, name, surname, group, vk} = req.body;
-    //         const candidate = await User.findOne({username});
-    //
-    //         if(candidate){
-    //             return resp.status(400).json({message: "Пользователь с таким статусом уже существует"});
-    //         }
-    //
-    //         const hashPassword = bcrypt.hashSync(password, 7);
-    //
-    //         await User.create({username, password: hashPassword,  name, surname, roles: ["USER"], group, vk});
-    //
-    //         return resp.status(200).json("ok");
-    //     } catch (e){
-    //         console.error(e);
-    //         resp.status(400).json({message: "Registration error"});
-    //     }
-    // }
+
     async registration(req, resp){
         try{
             const errors = validationResult(req);
@@ -54,31 +32,59 @@ class authController {
                 return resp.status(400).json({message: "Ошибка при регистрации", errors});
             }
 
-            const {name, surname, group, vk_id, vk_link} = req.body;
+            const {name, surname, group, vk_id, vk_link, password, username} = req.body;
 
             const candidate = await User.findOne({vk_id});
-
-            if(candidate){
-                return resp.status(400).json({message: "Пользователь с таким статусом уже существует"});
+            const copies = await User.find({username})
+            console.log("copies", copies);
+            if(copies.length > 0){
+                return resp.status(400).json({message: "Пользователь с таким username уже существует"});
             }
 
             let res = await testMessage(vk_id);
             if(res === true){
-                await User.create({name, surname, roles: ["USER"], group, vk_id});
-                sendMessage(`
-                    Вы успешно зарегистрировались на сайте IT-ЛЭТИ.\n\n
-                    Подробнее ознакомиться с IT-ЛЭТИ:
-                    https://vk.com/@itleti-manifest-it-leti\n\n
-                    Список наших актуальных курсов:
-                    https://vk.com/@itleti-spisok-meropriyatii-osen-2021\n\n
-                    
-                `, vk_id);
+                let pass = bcrypt.hashSync(password, 7)
+                if(!candidate){
+                    await User.create({name, surname, roles: ["USER"], group, vk_id, username, password: pass});
+                    await sendMessage(`
+                        Вы успешно зарегистрировались на сайте IT-ЛЭТИ.\n\n
+                        Подробнее ознакомиться с IT-ЛЭТИ:
+                        https://vk.com/@itleti-manifest-it-leti\n\n
+                        Список наших актуальных курсов:
+                        https://vk.com/@itleti-spisok-meropriyatii-osen-2021\n\n
+                        
+                    `, vk_id);
+                } else {
+                    await User.updateOne({vk_id}, {name, surname, group, vk_id, username, password: pass});
+                }
+                console.log("register");
+                console.log("password", password);
+                console.log("pass", pass);
             }
             return resp.status(200).json(res);
         } catch (e){
             console.error(e);
 
             resp.status(400).json({message: "Registration error"});
+        }
+    }
+
+    async setUsernameAndPassword(req, resp){
+        try{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return resp.status(400).json({message: "Ошибка добавления логина и пароля", errors});
+            }
+            const {username, password} = req.body;
+            if(username && password){
+                return resp.status(400).json({message: "Неподходящий логин или пароль", errors});
+            }
+            console.log("req.user._id", req.user.id);
+            //await User.updateOne({_id: req.user.id}, {username, password});
+            resp.status(200).json("ok")
+
+        } catch (e){
+            return resp.status(400).json(error("Ошибка добавления логина и пароля"));
         }
     }
 
@@ -91,36 +97,44 @@ class authController {
                 return resp.status(400).json({message: "Ошибка при логинизации", errors});
             }
 
-            const {vk_id, expire, mid, sid, cookie, secret} = req.body;
-            const secretKey = vk_secretKey;
-            const sig = req.body.sig ? req.body.sig : cookie.split("&").splice(-1)[0].split("=")[1];
+            const {vk_id, expire, mid, sid, cookie, secret, username, password} = req.body;
+            let user;
+            if(!username){
+                const secretKey = vk_secretKey;
+                const sig = req.body.sig ? req.body.sig : cookie.split("&").splice(-1)[0].split("=")[1];
 
 
-            if(md5((cookie ?
-                cookie.split("&").slice(0, -1).join("") + secretKey :
-                `expire=${expire}mid=${mid}secret=${secret}sid=${sid}`+ secretKey)) !== sig)
-            {
+                if(md5((cookie ?
+                    cookie.split("&").slice(0, -1).join("") + secretKey :
+                    `expire=${expire}mid=${mid}secret=${secret}sid=${sid}`+ secretKey)) !== sig)
+                {
 
-                resp.status(400).json({message: "Login error: не прошла проверка подписи"});
+                    resp.status(400).json({message: "Login error: не прошла проверка подписи"});
 
-                return;
+                    return;
+                }
+
+
+                user = await User.findOne({vk_id});
+                if(!user){
+                    return resp.status(400).json({message: "Пользователь не найден"})
+                }
+            } else if(username) {
+                user = await User.findOne({username});
+                console.log("password", password);
+                let pss = bcrypt.hashSync(password, 7);
+                console.log(pss);
+                console.log(user.password);
+                const isValidPassword = bcrypt.compareSync(password, user.password); //сравнит пароль и хеш вернёт bool
+
+                if(!isValidPassword){
+                    return resp.status(400).json({message: "Неверный пароль"});
+                }
             }
 
+            const token = generateAccessToken(user._id, user.roles, vk_id, user.username);
 
-            const user = await User.findOne({vk_id});
-            if(!user){
-                return resp.status(400).json({message: "Пользователь не найден"})
-            }
-
-            //const isValidPassword = bcrypt.compareSync(password, user.password); //сравнит пароль и хеш вернёт bool
-
-            // if(!isValidPassword){
-            //     return resp.status(400).json({message: "Неверный пароль"});
-            // }
-
-            const token = generateAccessToken(user._id, user.roles, vk_id);
-
-            return resp.json({token, expiresIn: 3600 * 3, roles: user.roles, name: user.name + " " + user.surname});
+            return resp.json({token, expiresIn: 3600 * 3, roles: user.roles, name: user.name + " " + user.surname, username: user.username, group: user.group});
 
         } catch (e){
             console.error(e);
@@ -133,6 +147,7 @@ class authController {
         try{
             req.user = jwt.verify(token, secret);
             resp.json("ok");
+
         } catch (e){
             resp.status(400).json(error("Bad token"));
         }

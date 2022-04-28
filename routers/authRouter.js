@@ -10,7 +10,7 @@ const router = new Router();
 
 
 router.post('/login', [
-    check('vk_id', 'Вк не может быть пустым').notEmpty(),
+    //check('vk_id', 'Вк не может быть пустым').notEmpty(),
 ], authController.login);
 
 router.post(
@@ -81,8 +81,8 @@ router.get('/users', [authMiddleware, roleMiddleware(["ADMIN"])], authController
 //
 // })
 
-// router.post("/specFixUsers",
-//     authController.specFixUsers
-// )
+router.post("/specFixUsers",
+    authController.specFixUsers
+)
 
 export default router;
