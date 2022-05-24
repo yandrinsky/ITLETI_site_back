@@ -1,14 +1,15 @@
 import {VK, MessageContext, getRandomId } from "vk-io";
-import {TOKEN} from "./config.js";
+
 import { API } from 'vk-io';
 import error from "../../auxilary/error.js";
+import {VK_TOKEN} from "../../ENV.js";
 
 const api = new API({
-    token: TOKEN,
+    token: VK_TOKEN,
 });
 
 const vk = new VK({
-    token: TOKEN,
+    token: VK_TOKEN,
 })
 
 

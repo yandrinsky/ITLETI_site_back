@@ -237,6 +237,12 @@ router.post(
     courseController.courseStats,
 )
 
+router.post(
+    '/getFullAttendance',
+    check("course_id", "").notEmpty(),
+    courseController.getCourseStudentsAttendance,
+)
+
 // router.post(
 //     '/checkDoubleAcc',
 //     courseController.checkDoubleAcc,

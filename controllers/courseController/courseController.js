@@ -18,6 +18,7 @@ import path from "path"
 import Grade from "../../models/Grade.js";
 import {sendMessage} from "../../VK/bot/bot.js";
 import {getMeeting} from "./funtions/meeting/getMeeting.js";
+import {getCourseStudentsAttendance} from "./funtions/statistics/studentsAttendance.js";
 
 
 
@@ -922,6 +923,20 @@ class courseController{
             resp.status(400).json({message: "Неизвестная ошибка запроса оценки занятия", errors: e})
         }
 
+    }
+
+    async getCourseStudentsAttendance(req, resp){
+        try{
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return resp.status(400).json({message: "Ошибка при получении аргументов фунции getCourseStudentsAttendance", errors});
+            }
+            const res = await getCourseStudentsAttendance({course_id: req.body.course_id});
+            resp.json(res).status(200);
+        } catch (e){
+            console.log(e);
+            resp.json(error("Ошибка при получении статистики о посещаемости курса")).status(400);
+        }
     }
 
     async joinCourse(req, resp){

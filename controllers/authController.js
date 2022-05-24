@@ -7,8 +7,7 @@ import {secret} from "../config.js";
 import error from "../auxilary/error.js";
 import {sendMessage, testMessage} from "../VK/bot/bot.js";
 import md5 from "md5";
-import {vk_secretKey} from "../VK/params.js";
-
+import {VK_SECRET_KEY} from "../ENV.js";
 
 
 
@@ -100,7 +99,7 @@ class authController {
             const {vk_id, expire, mid, sid, cookie, secret, username, password} = req.body;
             let user;
             if(!username){
-                const secretKey = vk_secretKey;
+                const secretKey = VK_SECRET_KEY;
                 const sig = req.body.sig ? req.body.sig : cookie.split("&").splice(-1)[0].split("=")[1];
 
 
